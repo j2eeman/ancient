@@ -1,0 +1,3840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>远古 - 帝国时代风格游戏</title>
+    <script src="/js/howler.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            overflow: hidden;
+            color: #fff;
+        }
+        
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        .auth-box {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #8B4513;
+            box-shadow: 0 0 30px rgba(139, 69, 19, 0.3);
+        }
+        
+        .auth-box h1 { text-align: center; margin-bottom: 30px; font-size: 2.5em; color: #FFD700; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .auth-tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid #8B4513; }
+        .auth-tab {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .auth-tab.active { color: #FFD700; border-bottom: 2px solid #FFD700; margin-bottom: -2px; }
+        
+        .auth-form input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 1px solid #8B4513;
+            border-radius: 4px;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 15px;
+        }
+        .auth-form input::placeholder { color: #888; }
+        .auth-form button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 4px;
+            background: linear-gradient(180deg, #4a7c59 0%, #3a5c49 100%);
+            color: #fff;
+            font-size: 17px;
+            cursor: pointer;
+            border: 1px solid #8B4513;
+            transition: all 0.3s;
+        }
+        .auth-form button:hover { background: linear-gradient(180deg, #5a8c69 0%, #4a6c59 100%); transform: translateY(-1px); }
+        
+        .lobby-container { display: none; padding: 60px; background: #0a0a0a; min-height: 100vh; }
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding: 25px;
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            border-radius: 8px;
+            border: 2px solid #8B4513;
+        }
+        .lobby-header h1 { font-size: 2.2em; color: #FFD700; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .user-info { display: flex; align-items: center; gap: 25px; }
+        .user-info button { padding: 12px 25px; background: #8B0000; border: 1px solid #8B4513; border-radius: 4px; color: #fff; cursor: pointer; font-size: 15px; transition: all 0.3s; }
+        .user-info button:hover { background: #a00000; }
+        
+        .game-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .game-mode-card {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .game-mode-card:hover { transform: translateY(-8px); border-color: #FFD700; background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%); box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2); }
+        .game-mode-card h3 { font-size: 1.6em; margin-bottom: 12px; color: #FFD700; }
+        .game-mode-card p { color: #aaa; font-size: 1em; }
+        
+        .game-container { display: none; width: 100vw; height: 100vh; position: relative; }
+        
+        .game-canvas { display: block; background: #3d6b4a; }
+        
+        .resource-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            padding: 8px 20px;
+            background: linear-gradient(180deg, rgba(42, 42, 42, 0.98) 0%, rgba(26, 26, 26, 0.98) 100%);
+            border-bottom: 3px solid #8B4513;
+            z-index: 100;
+        }
+        .resource-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 4px;
+            border: 1px solid #8B4513;
+        }
+        .resource-icon { font-size: 1.5em; }
+        .resource-value { font-size: 1.1em; font-weight: bold; min-width: 55px; text-align: right; color: #FFD700; }
+        
+        .bottom-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            display: flex;
+            background: linear-gradient(0deg, rgba(42, 42, 42, 0.98) 0%, rgba(26, 26, 26, 0.98) 100%);
+            border-top: 3px solid #8B4513;
+            z-index: 100;
+        }
+        
+        .selection-panel {
+            width: 240px;
+            padding: 15px;
+            border-right: 2px solid #8B4513;
+            background: rgba(26, 26, 26, 0.9);
+        }
+        .selection-panel h3 { color: #FFD700; font-size: 1.1em; margin-bottom: 10px; }
+        .selection-panel p { color: #aaa; font-size: 0.9em; margin: 5px 0; }
+        .selection-panel .unit-count { color: #00ff00; font-weight: bold; font-size: 1.2em; }
+        
+        .command-panel {
+            flex: 1;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            background: rgba(26, 26, 26, 0.9);
+        }
+        .command-btn {
+            padding: 8px 5px;
+            background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            border: 1px solid #8B4513;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.2s;
+        }
+        .command-btn:hover { background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%); border-color: #FFD700; transform: translateY(-2px); }
+        .command-btn.selected { background: linear-gradient(180deg, #5a5a5a 0%, #4a4a4a 100%); border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        .command-btn .icon { font-size: 1.6em; }
+        .command-btn .cost { font-size: 0.7em; color: #FFD700; }
+        .command-btn .label { font-size: 0.75em; }
+        
+        .minimap-panel {
+            width: 240px;
+            padding: 10px;
+            border-left: 2px solid #8B4513;
+            background: rgba(26, 26, 26, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .minimap-panel canvas {
+            width: 200px;
+            height: 150px;
+            background: #3d6b4a;
+            border: 2px solid #8B4513;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .minimap-label { color: #aaa; font-size: 0.85em; margin-top: 10px; }
+        .reset-zoom-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            border: 1px solid #8B4513;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+        .reset-zoom-btn:hover { background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%); border-color: #FFD700; }
+        
+        .game-message {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            padding: 15px 35px;
+            border-radius: 4px;
+            font-size: 16px;
+            z-index: 1000;
+            display: none;
+            border: 2px solid #FFD700;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-message" id="game-message"></div>
+
+    <div class="auth-container" id="auth-container">
+        <div class="auth-box">
+            <h1>🏛️ 远古</h1>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showAuthTab('login')">登录</button>
+                <button class="auth-tab" onclick="showAuthTab('register')">注册</button>
+            </div>
+            <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+                <input type="text" id="login-username" placeholder="用户名" required>
+                <input type="password" id="login-password" placeholder="密码" required>
+                <button type="submit">登录</button>
+            </form>
+            <form class="auth-form" id="register-form" style="display:none" onsubmit="handleRegister(event)">
+                <input type="text" id="register-username" placeholder="用户名" required>
+                <input type="password" id="register-password" placeholder="密码" required>
+                <input type="email" id="register-email" placeholder="邮箱" required>
+                <button type="submit">注册</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="lobby-container" id="lobby-container">
+        <div class="lobby-header">
+            <h1>🏛️ 远古 - 游戏大厅</h1>
+            <div class="user-info">
+                <span id="current-username" style="color: #FFD700; font-size: 1.2em;">玩家</span>
+                <button onclick="logout()">退出</button>
+            </div>
+        </div>
+        <div class="game-modes">
+            <div class="game-mode-card" onclick="showDifficultySelect()">
+                <h3>🤖 人机对战</h3>
+                <p>与AI进行对战，练习你的策略</p>
+            </div>
+            <div class="game-mode-card" onclick="showGameList()">
+                <h3>👥 人人对战</h3>
+                <p>加入其他玩家的对战房间</p>
+            </div>
+        </div>
+        <div id="difficulty-select" style="display:none; background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%); border-radius: 8px; padding: 30px; margin-top: 30px; border: 2px solid #8B4513;">
+            <h3 style="color: #FFD700; margin-bottom: 20px;">选择难度</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div class="game-mode-card" onclick="createGame(true, 'easy')">
+                    <h3>🌱 简单</h3>
+                    <p>适合新手，AI发展缓慢</p>
+                </div>
+                <div class="game-mode-card" onclick="createGame(true, 'medium')">
+                    <h3>⚡ 中等</h3>
+                    <p>平衡的挑战，AI正常发展</p>
+                </div>
+                <div class="game-mode-card" onclick="createGame(true, 'hard')">
+                    <h3>🔥 困难</h3>
+                    <p>高难度挑战，AI发展迅速</p>
+                </div>
+            </div>
+        </div>
+        <div id="game-list-section" style="display:none; background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%); border-radius: 8px; padding: 30px; margin-top: 30px; border: 2px solid #8B4513;">
+            <h3 style="color: #FFD700; margin-bottom: 20px;">等待中的游戏</h3>
+            <div id="game-list-items"></div>
+        </div>
+    </div>
+
+    <div class="game-container" id="game-container">
+        <canvas id="game-canvas" class="game-canvas"></canvas>
+        
+        <div class="resource-bar">
+            <div class="resource-item">
+                <span class="resource-icon">🪵</span>
+                <span class="resource-value" id="resource-wood">0</span>
+            </div>
+            <div class="resource-item">
+                <span class="resource-icon">🌾</span>
+                <span class="resource-value" id="resource-food">0</span>
+            </div>
+            <div class="resource-item">
+                <span class="resource-icon">💰</span>
+                <span class="resource-value" id="resource-gold">0</span>
+            </div>
+            <div class="resource-item">
+                <span class="resource-icon">🪨</span>
+                <span class="resource-value" id="resource-stone">0</span>
+            </div>
+            <div class="resource-item">
+                <span class="resource-icon">👥</span>
+                <span class="resource-value" id="population">0/20</span>
+            </div>
+            <div class="resource-item">
+                <span class="resource-icon">⏳</span>
+                <span class="resource-value" id="age-display">封建时代</span>
+            </div>
+            <div class="resource-item">
+                <button onclick="endGame()" style="background: #8B0000; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">结束游戏</button>
+            </div>
+        </div>
+        
+        <div class="bottom-panel">
+            <div class="selection-panel" id="selection-panel">
+                <h3>未选择</h3>
+                <p>拖拽框选或点击选择单位</p>
+            </div>
+            <div class="command-panel" id="command-panel"></div>
+            <div class="minimap-panel">
+                <canvas id="minimap" width="200" height="150"></canvas>
+                <span class="minimap-label">小地图</span>
+                <button class="reset-zoom-btn" onclick="resetZoom()">恢复原始尺寸</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentGame = null;
+        let selectedUnits = [];
+        let isSelecting = false;
+        let selectionStart = { x: 0, y: 0 };
+        let buildMode = null;
+        let gameCanvas, ctx, minimapCanvas, minimapCtx;
+        let lastTime = 0;
+
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let dragStartCameraX = 0;
+        let dragStartCameraY = 0;
+
+        let gameData = {
+            resources: { wood: 3000, food: 2000, gold: 1000, stone: 800 },
+            buildings: [],
+            units: [],
+            mapResources: [],
+            animals: [],
+            tradePosts: [],
+            terrainFeatures: [],
+            age: 1,
+            autoGatherers: [],
+            traders: [],
+            towers: [],
+            controlGroups: {},
+            projectiles: [],
+            attackEffects: [],
+            smokeEffects: [],
+            population: 0,
+            populationCap: 20,
+            difficulty: 'medium',
+            aiSettings: {
+                easy: {
+                    maxUnits: 10,
+                    productionInterval: 20000,
+                    attackDelay: 60000,
+                    resourceGatherRate: 0.7,
+                    unitProductionRatio: { villager: 0.7, soldier: 0.3 }
+                },
+                medium: {
+                    maxUnits: 15,
+                    productionInterval: 15000,
+                    attackDelay: 45000,
+                    resourceGatherRate: 1.0,
+                    unitProductionRatio: { villager: 0.5, soldier: 0.5 }
+                },
+                hard: {
+                    maxUnits: 20,
+                    productionInterval: 10000,
+                    attackDelay: 30000,
+                    resourceGatherRate: 1.3,
+                    unitProductionRatio: { villager: 0.3, soldier: 0.7 }
+                }
+            }
+        };
+
+        const MAP_WIDTH = 3000;
+        const MAP_HEIGHT = 3000;
+
+        const ENTITY_TYPES = {
+            town_center: { name: '城镇中心', health: 2000, size: 100, color: '#8B4513', produces: ['villager'], attack: 8, range: 150 },
+            town_center_age2: { name: '城堡', health: 3000, size: 100, color: '#654321', produces: ['villager', 'soldier', 'archer'], attack: 12, range: 180 },
+            town_center_age3: { name: '皇宫', health: 4000, size: 100, color: '#4a3520', produces: ['villager', 'knight', 'catapult'], attack: 15, range: 200 },
+            barracks: { name: '兵营', health: 1000, size: 80, color: '#5a4a3a', produces: ['soldier', 'archer'] },
+            siege_workshop: { name: '攻城器工厂', health: 800, size: 80, color: '#4a4a3a', produces: ['catapult'] },
+            farm: { name: '农田', health: 500, size: 60, color: '#7a9a5a' },
+            market: { name: '市场', health: 800, size: 80, color: '#6a5a4a', produces: ['trader'] },
+            lumber_camp: { name: '木材厂', health: 400, size: 70, color: '#8B4513' },
+            mill: { name: '磨坊', health: 400, size: 70, color: '#c9a66b' },
+            mining_camp: { name: '矿厂', health: 400, size: 70, color: '#696969' },
+            wall: { name: '围墙', health: 800, size: 50, color: '#808080' },
+            watch_tower: { name: '箭塔', health: 600, attack: 10, range: 200, size: 60, color: '#5a4a3a' },
+            castle_tower: { name: '炮楼', health: 1000, attack: 25, range: 280, size: 70, color: '#4a3a2a' },
+            villager: { name: '村民', health: 100, attack: 5, speed: 2.5, size: 24, color: '#4169E1', population: 1, icon: '👨‍🌾' },
+            soldier: { name: '士兵', health: 150, attack: 15, speed: 2.2, size: 28, color: '#4169E1', population: 1, icon: '⚔️' },
+            knight: { name: '骑士', health: 200, attack: 25, speed: 3.5, size: 32, color: '#4169E1', population: 2, icon: '🏇' },
+            archer: { name: '弓箭手', health: 120, attack: 20, speed: 2.0, range: 180, size: 26, color: '#4169E1', population: 1, icon: '🏹' },
+            trader: { name: '商队', health: 80, attack: 0, speed: 1.8, size: 30, color: '#4169E1', population: 1, icon: '🛒' },
+            catapult: { name: '投石车', health: 150, attack: 40, speed: 0.8, range: 250, size: 36, color: '#4169E1', population: 3, icon: '🗡️' }
+        };
+
+        const BUILD_COSTS = {
+            barracks: { wood: 175 },
+            siege_workshop: { wood: 200, stone: 100 },
+            farm: { wood: 60 },
+            market: { wood: 200, stone: 100 },
+            lumber_camp: { wood: 100 },
+            mill: { wood: 100 },
+            mining_camp: { wood: 100 },
+            wall: { stone: 10 },
+            watch_tower: { wood: 150, stone: 50 },
+            castle_tower: { wood: 200, stone: 100 }
+        };
+
+        const UNIT_COSTS = {
+            villager: { food: 50 },
+            soldier: { food: 60, gold: 20 },
+            knight: { food: 80, gold: 60 },
+            archer: { food: 50, gold: 40 },
+            trader: { wood: 50, food: 50 },
+            catapult: { wood: 200, gold: 200 }
+        };
+
+        const FORMATIONS = {
+            line: { name: '横排', cols: 12, spacing: 40 },
+            square: { name: '方阵', cols: 8, spacing: 35 },
+            column: { name: '纵列', cols: 4, spacing: 45 },
+            wedge: { name: '楔形', cols: 6, spacing: 40 }
+        };
+
+        let currentFormation = 'square';
+
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+        }
+
+        function showAuthTabByName(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            const activeTab = document.querySelector(`.auth-tab[onclick*="${tab}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `username=${username}&password=${password}`
+                });
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showLobby();
+                } else {
+                    showMessage('登录失败，请检查用户名和密码');
+                }
+            } catch (error) {
+                showMessage('登录失败: ' + error.message);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const email = document.getElementById('register-email').value;
+            try {
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `username=${username}&password=${password}&email=${email}`
+                });
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showLobby();
+                } else {
+                    showMessage('注册失败，用户名或邮箱已存在');
+                }
+            } catch (error) {
+                showMessage('注册失败: ' + error.message);
+            }
+        }
+
+        function showLobby() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('lobby-container').style.display = 'block';
+            document.getElementById('current-username').textContent = currentUser.username;
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('lobby-container').style.display = 'none';
+        }
+
+        async function createGame(isAI, difficulty = 'medium') {
+            if (!currentUser) {
+                showMessage('请先登录');
+                return;
+            }
+            try {
+                const response = await fetch('/api/games/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `userId=${currentUser.id}&isAI=${isAI}`
+                });
+                if (response.ok) {
+                    currentGame = await response.json();
+                    currentGame.difficulty = difficulty;
+                    startGame();
+                } else {
+                    showMessage('创建游戏失败');
+                }
+            } catch (error) {
+                showMessage('创建游戏失败: ' + error.message);
+            }
+        }
+
+        async function showDifficultySelect() {
+            document.getElementById('game-list-section').style.display = 'none';
+            document.getElementById('difficulty-select').style.display = 'block';
+        }
+
+        async function showGameList() {
+            document.getElementById('difficulty-select').style.display = 'none';
+            const listSection = document.getElementById('game-list-section');
+            listSection.style.display = listSection.style.display === 'none' ? 'block' : 'none';
+            try {
+                const response = await fetch('/api/games/waiting');
+
+                const games = await response.json();
+                const container = document.getElementById('game-list-items');
+                if (games.length === 0) {
+                    container.innerHTML = '<p style="color: #aaa;">暂无等待中的游戏</p>';
+                } else {
+                    container.innerHTML = games.map(game => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #3a3a3a; margin: 8px 0; border-radius: 4px;">
+                            <span style="font-size: 1.1em;">游戏 #${game.gameId.substring(0, 8)}</span>
+                            <button onclick="joinGame('${game.gameId}')" style="padding: 10px 25px; background: #4a7c59; border: 1px solid #8B4513; border-radius: 4px; color: #fff; cursor: pointer; font-size: 1em;">加入</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                showMessage('获取游戏列表失败');
+            }
+        }
+
+        async function joinGame(gameId) {
+            try {
+                const response = await fetch('/api/games/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `userId=${currentUser.id}&gameId=${gameId}`
+                });
+                if (response.ok) {
+                    currentGame = await response.json();
+                    startGame();
+                } else {
+                    showMessage('加入游戏失败');
+                }
+            } catch (error) {
+                showMessage('加入游戏失败: ' + error.message);
+            }
+        }
+
+        function startGame() {
+            document.getElementById('lobby-container').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            
+            gameCanvas = document.getElementById('game-canvas');
+            ctx = gameCanvas.getContext('2d');
+            minimapCanvas = document.getElementById('minimap');
+            minimapCtx = minimapCanvas.getContext('2d');
+            
+            // 先初始化数据，再调整画布大小
+            initGameData();
+            
+            // 应用难度设置
+            if (currentGame && currentGame.difficulty) {
+                gameData.difficulty = currentGame.difficulty;
+                showMessage(`游戏难度: ${currentGame.difficulty === 'easy' ? '简单' : currentGame.difficulty === 'medium' ? '中等' : '困难'}`);
+            }
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            initInputHandlers();
+            updateResourceDisplay();
+            camera.x = 400 - gameCanvas.width / 2;
+            camera.y = 400 - gameCanvas.height / 2;
+            
+            // 计算初始人口
+            gameData.population = gameData.units.filter(u => u.playerColor === 'blue').reduce((total, unit) => {
+                return total + (ENTITY_TYPES[unit.type].population || 1);
+            }, 0);
+            
+            // 调试信息
+            console.log('Game data initialized:', {
+                buildings: gameData.buildings.length,
+                units: gameData.units.length,
+                resources: gameData.mapResources.length,
+                canvas: { width: gameCanvas.width, height: gameCanvas.height },
+                camera: camera,
+                difficulty: gameData.difficulty
+            });
+            
+            requestAnimationFrame(gameLoop);
+            showMessage('游戏开始！拖拽框选单位，右键移动，中键拖动地图');
+            showMessage(`人口: ${gameData.population}/${gameData.populationCap}`);
+        }
+
+        function endGame() {
+            if (confirm('确定要结束游戏吗？')) {
+                // 停止游戏循环
+                cancelAnimationFrame(gameLoopId);
+                
+                // 重置游戏数据
+                gameData = {
+                    resources: { wood: 3000, food: 2000, gold: 1000, stone: 800 },
+                    buildings: [],
+                    units: [],
+                    mapResources: [],
+                    age: 1,
+                    autoGatherers: [],
+                    traders: [],
+                    towers: [],
+                    controlGroups: {},
+                    projectiles: [],
+                    attackEffects: [],
+                    population: 0,
+                    populationCap: 20
+                };
+                
+                selectedUnits = [];
+                buildMode = null;
+                isSelecting = false;
+                isDragging = false;
+                currentFormation = 'square';
+                
+                // 显示大厅
+                document.getElementById('game-container').style.display = 'none';
+                document.getElementById('lobby-container').style.display = 'block';
+                
+                showMessage('游戏已结束');
+            }
+        }
+
+        // 生产单位
+        function produceUnit(unitType, buildingId) {
+            const building = gameData.buildings.find(b => b.id === buildingId);
+            if (!building) return;
+            
+            const unitInfo = ENTITY_TYPES[unitType];
+            const cost = UNIT_COSTS[unitType];
+            
+            // 检查资源
+            const canAfford = Object.entries(cost).every(([resource, amount]) => {
+                return gameData.resources[resource] >= amount;
+            });
+            
+            // 检查人口
+            const unitPopulation = unitInfo.population || 1;
+            const canAffordPopulation = gameData.population + unitPopulation <= gameData.populationCap;
+            
+            if (!canAfford) {
+                showMessage('资源不足，无法生产单位');
+                return;
+            }
+            
+            if (!canAffordPopulation) {
+                showMessage('人口已满，无法生产单位');
+                return;
+            }
+            
+            // 扣除资源
+            Object.entries(cost).forEach(([resource, amount]) => {
+                gameData.resources[resource] -= amount;
+            });
+            
+            // 增加人口
+            gameData.population += unitPopulation;
+            
+            // 创建单位
+            const newUnit = {
+                id: Date.now() + Math.random(),
+                type: unitType,
+                x: building.x + Math.random() * 30 - 15,
+                y: building.y + Math.random() * 30 - 15,
+                health: unitInfo.health,
+                maxHealth: unitInfo.health,
+                playerColor: building.playerColor,
+                targetX: null,
+                targetY: null,
+                carrying: null,
+                carryAmount: 0,
+                attackTarget: null,
+                lastAttackTime: 0
+            };
+            
+            gameData.units.push(newUnit);
+            // 播放训练音效
+            playSound('train');
+            showMessage(`${unitInfo.name}生产完成！`);
+            updateResourceDisplay();
+        }
+
+        function resizeCanvas() {
+            gameCanvas.width = window.innerWidth;
+            gameCanvas.height = window.innerHeight;
+        }
+
+        function initGameData() {
+            gameData.resources = { wood: 3000, food: 2000, gold: 1000, stone: 800 };
+            
+            gameData.buildings = [
+                { id: 1, type: 'town_center', x: 400, y: 400, health: 2000, maxHealth: 2000, playerColor: 'blue' },
+                { id: 2, type: 'town_center', x: 2600, y: 2600, health: 2000, maxHealth: 2000, playerColor: 'red' }
+            ];
+            
+            gameData.units = [
+                { id: 1, type: 'villager', x: 500, y: 380, health: 100, maxHealth: 100, playerColor: 'blue', targetX: null, targetY: null, carrying: null, carryAmount: 0, attackTarget: null, lastAttackTime: 0 },
+                { id: 2, type: 'villager', x: 500, y: 420, health: 100, maxHealth: 100, playerColor: 'blue', targetX: null, targetY: null, carrying: null, carryAmount: 0, attackTarget: null, lastAttackTime: 0 },
+                { id: 3, type: 'villager', x: 500, y: 460, health: 100, maxHealth: 100, playerColor: 'blue', targetX: null, targetY: null, carrying: null, carryAmount: 0, attackTarget: null, lastAttackTime: 0 },
+                { id: 4, type: 'soldier', x: 560, y: 360, health: 150, maxHealth: 150, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 5, type: 'soldier', x: 560, y: 400, health: 150, maxHealth: 150, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 6, type: 'soldier', x: 560, y: 440, health: 150, maxHealth: 150, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 7, type: 'soldier', x: 600, y: 360, health: 150, maxHealth: 150, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 8, type: 'soldier', x: 600, y: 400, health: 150, maxHealth: 150, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 9, type: 'soldier', x: 600, y: 440, health: 150, maxHealth: 150, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 10, type: 'archer', x: 640, y: 380, health: 120, maxHealth: 120, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 11, type: 'archer', x: 640, y: 420, health: 120, maxHealth: 120, playerColor: 'blue', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 12, type: 'villager', x: 2500, y: 2580, health: 100, maxHealth: 100, playerColor: 'red', targetX: null, targetY: null, carrying: null, carryAmount: 0, attackTarget: null, lastAttackTime: 0 },
+                { id: 13, type: 'villager', x: 2500, y: 2620, health: 100, maxHealth: 100, playerColor: 'red', targetX: null, targetY: null, carrying: null, carryAmount: 0, attackTarget: null, lastAttackTime: 0 },
+                { id: 14, type: 'soldier', x: 2440, y: 2560, health: 150, maxHealth: 150, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 15, type: 'soldier', x: 2440, y: 2600, health: 150, maxHealth: 150, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 16, type: 'soldier', x: 2440, y: 2640, health: 150, maxHealth: 150, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 17, type: 'soldier', x: 2400, y: 2560, health: 150, maxHealth: 150, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 18, type: 'soldier', x: 2400, y: 2600, health: 150, maxHealth: 150, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 19, type: 'soldier', x: 2400, y: 2640, health: 150, maxHealth: 150, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 20, type: 'archer', x: 2360, y: 2580, health: 120, maxHealth: 120, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 },
+                { id: 21, type: 'archer', x: 2360, y: 2620, health: 120, maxHealth: 120, playerColor: 'red', targetX: null, targetY: null, attackTarget: null, lastAttackTime: 0 }
+            ];
+            
+            // 生成地图资源
+            gameData.mapResources = [];
+            const resourceClusters = [
+                { type: 'wood', baseX: 550, baseY: 450, count: 40 },
+                { type: 'wood', baseX: 750, baseY: 650, count: 35 },
+                { type: 'wood', baseX: 500, baseY: 850, count: 30 },
+                { type: 'wood', baseX: 700, baseY: 1050, count: 35 },
+                { type: 'wood', baseX: 900, baseY: 450, count: 32 },
+                { type: 'wood', baseX: 2350, baseY: 2450, count: 40 },
+                { type: 'wood', baseX: 2150, baseY: 2650, count: 35 },
+                { type: 'wood', baseX: 2400, baseY: 2850, count: 30 },
+                { type: 'wood', baseX: 2200, baseY: 2950, count: 35 },
+                { type: 'wood', baseX: 1950, baseY: 2550, count: 32 },
+                { type: 'gold', baseX: 950, baseY: 550, count: 24 },
+                { type: 'gold', baseX: 1450, baseY: 1250, count: 24 },
+                { type: 'gold', baseX: 1550, baseY: 2450, count: 24 },
+                { type: 'gold', baseX: 1200, baseY: 950, count: 22 },
+                { type: 'stone', baseX: 650, baseY: 750, count: 22 },
+                { type: 'stone', baseX: 2250, baseY: 2150, count: 22 },
+                { type: 'stone', baseX: 1100, baseY: 1100, count: 18 },
+                { type: 'food', baseX: 500, baseY: 600, count: 30 },
+                { type: 'food', baseX: 2400, baseY: 2700, count: 30 },
+                { type: 'food', baseX: 800, baseY: 950, count: 26 },
+                { type: 'food', baseX: 2100, baseY: 2800, count: 26 },
+                // 额外的资源集群，分布在地图其他区域
+                { type: 'wood', baseX: 1500, baseY: 1500, count: 35 },
+                { type: 'wood', baseX: 1800, baseY: 1200, count: 30 },
+                { type: 'wood', baseX: 1200, baseY: 1800, count: 32 },
+                { type: 'gold', baseX: 1800, baseY: 1800, count: 20 },
+                { type: 'stone', baseX: 1600, baseY: 1400, count: 20 },
+                { type: 'food', baseX: 1400, baseY: 1600, count: 25 }
+            ];
+            
+            resourceClusters.forEach((cluster, clusterIndex) => {
+                for (let i = 0; i < cluster.count; i++) {
+                    gameData.mapResources.push({
+                        id: `${cluster.type}_${clusterIndex}_${i}`,
+                        type: cluster.type,
+                        x: cluster.baseX + (i % 7) * 35 + Math.random() * 20,
+                        y: cluster.baseY + Math.floor(i / 7) * 35 + Math.random() * 20,
+                        amount: 300,
+                        cluster: clusterIndex
+                    });
+                }
+            });
+            
+            // 生成地形特征
+            gameData.terrainFeatures = [];
+            
+            // 湖泊
+            for (let i = 0; i < 8; i++) {
+                const lakeSize = 120 + Math.random() * 250;
+                gameData.terrainFeatures.push({
+                    type: 'lake',
+                    x: Math.random() * MAP_WIDTH,
+                    y: Math.random() * MAP_HEIGHT,
+                    size: lakeSize
+                });
+            }
+            
+            // 山脉
+            for (let i = 0; i < 12; i++) {
+                const mountainSize = 80 + Math.random() * 200;
+                gameData.terrainFeatures.push({
+                    type: 'mountain',
+                    x: Math.random() * MAP_WIDTH,
+                    y: Math.random() * MAP_HEIGHT,
+                    size: mountainSize
+                });
+            }
+            
+            // 草地
+            for (let i = 0; i < 20; i++) {
+                const grassSize = 150 + Math.random() * 350;
+                gameData.terrainFeatures.push({
+                    type: 'grass',
+                    x: Math.random() * MAP_WIDTH,
+                    y: Math.random() * MAP_HEIGHT,
+                    size: grassSize
+                });
+            }
+            
+            // 森林
+            for (let i = 0; i < 10; i++) {
+                const forestSize = 250 + Math.random() * 300;
+                gameData.terrainFeatures.push({
+                    type: 'forest',
+                    x: Math.random() * MAP_WIDTH,
+                    y: Math.random() * MAP_HEIGHT,
+                    size: forestSize
+                });
+            }
+            
+            // 沙漠
+            for (let i = 0; i < 5; i++) {
+                const desertSize = 300 + Math.random() * 400;
+                gameData.terrainFeatures.push({
+                    type: 'desert',
+                    x: Math.random() * MAP_WIDTH,
+                    y: Math.random() * MAP_HEIGHT,
+                    size: desertSize
+                });
+            }
+            
+            // 生成动物
+            gameData.animals = [];
+            
+            // 羊群
+            const sheepFlocks = [
+                { baseX: 800, baseY: 700, count: 8 },
+                { baseX: 1200, baseY: 1500, count: 10 },
+                { baseX: 1800, baseY: 800, count: 7 },
+                { baseX: 2200, baseY: 1200, count: 9 },
+                { baseX: 1500, baseY: 2000, count: 12 },
+                { baseX: 600, baseY: 1200, count: 6 },
+                { baseX: 2400, baseY: 1800, count: 8 }
+            ];
+            
+            sheepFlocks.forEach((flock, flockIndex) => {
+                for (let i = 0; i < flock.count; i++) {
+                    gameData.animals.push({
+                        id: `sheep_${flockIndex}_${i}`,
+                        type: 'sheep',
+                        x: flock.baseX + (i % 4) * 40 + Math.random() * 30,
+                        y: flock.baseY + Math.floor(i / 4) * 40 + Math.random() * 30,
+                        health: 50,
+                        maxHealth: 50,
+                        moveSpeed: 1.5,
+                        targetX: null,
+                        targetY: null,
+                        lastMoveTime: Date.now()
+                    });
+                }
+            });
+            
+            // 鹿群
+            const deerFlocks = [
+                { baseX: 1000, baseY: 1000, count: 5 },
+                { baseX: 1600, baseY: 1200, count: 6 },
+                { baseX: 2000, baseY: 1600, count: 4 },
+                { baseX: 800, baseY: 1800, count: 5 }
+            ];
+            
+            deerFlocks.forEach((flock, flockIndex) => {
+                for (let i = 0; i < flock.count; i++) {
+                    gameData.animals.push({
+                        id: `deer_${flockIndex}_${i}`,
+                        type: 'deer',
+                        x: flock.baseX + (i % 3) * 50 + Math.random() * 30,
+                        y: flock.baseY + Math.floor(i / 3) * 50 + Math.random() * 30,
+                        health: 80,
+                        maxHealth: 80,
+                        moveSpeed: 2.0,
+                        targetX: null,
+                        targetY: null,
+                        lastMoveTime: Date.now()
+                    });
+                }
+            });
+            
+            // 野猪
+            const boarPositions = [
+                { x: 1200, y: 800 },
+                { x: 1800, y: 1400 },
+                { x: 2200, y: 1800 },
+                { x: 600, y: 1600 },
+                { x: 1000, y: 2000 }
+            ];
+            
+            boarPositions.forEach((pos, index) => {
+                gameData.animals.push({
+                    id: `boar_${index}`,
+                    type: 'boar',
+                    x: pos.x + Math.random() * 50 - 25,
+                    y: pos.y + Math.random() * 50 - 25,
+                    health: 120,
+                    maxHealth: 120,
+                    moveSpeed: 1.8,
+                    targetX: null,
+                    targetY: null,
+                    lastMoveTime: Date.now()
+                });
+            });
+            
+            // 生成贸易站
+            gameData.tradePosts = [];
+            const tradePostPositions = [
+                { x: 1000, y: 1000 },
+                { x: 2000, y: 1000 },
+                { x: 1000, y: 2000 },
+                { x: 2000, y: 2000 },
+                { x: 1500, y: 1500 }
+            ];
+            
+            tradePostPositions.forEach((pos, index) => {
+                gameData.tradePosts.push({
+                    id: `trade_post_${index}`,
+                    x: pos.x,
+                    y: pos.y,
+                    size: 80
+                });
+            });
+        }
+
+        function initInputHandlers() {
+            gameCanvas.addEventListener('mousedown', handleMouseDown);
+            gameCanvas.addEventListener('mousemove', handleMouseMove);
+            gameCanvas.addEventListener('mouseup', handleMouseUp);
+            gameCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            gameCanvas.addEventListener('wheel', handleWheel);
+            minimapCanvas.addEventListener('click', handleMinimapClick);
+            document.addEventListener('keydown', handleKeyDown);
+        }
+
+        let mousePos = { x: 0, y: 0 };
+
+        function getWorldPos(clientX, clientY) {
+            const rect = gameCanvas.getBoundingClientRect();
+            return {
+                x: ((clientX - rect.left) / camera.zoom) + camera.x,
+                y: ((clientY - rect.top) / camera.zoom) + camera.y
+            };
+        }
+
+        function handleMouseDown(e) {
+            const worldPos = getWorldPos(e.clientX, e.clientY);
+            mousePos = { x: e.clientX, y: e.clientY };
+            
+            if (e.button === 1) {
+                isDragging = true;
+                dragStart = { x: e.clientX, y: e.clientY };
+                dragStartCameraX = camera.x;
+                dragStartCameraY = camera.y;
+            } else if (e.button === 0) {
+                if (buildMode) {
+                    placeBuilding(worldPos.x, worldPos.y);
+                } else {
+                    isSelecting = true;
+                    selectionStart = { x: e.clientX, y: e.clientY };
+                    
+                    const clickedUnit = gameData.units.find(u => {
+                        if (u.playerColor !== 'blue') return false;
+                        const dist = Math.sqrt(Math.pow(u.x - worldPos.x, 2) + Math.pow(u.y - worldPos.y, 2));
+                        return dist < ENTITY_TYPES[u.type].size;
+                    });
+                    
+                    const clickedBuilding = gameData.buildings.find(b => {
+                        if (b.playerColor !== 'blue') return false;
+                        const dist = Math.sqrt(Math.pow(b.x - worldPos.x, 2) + Math.pow(b.y - worldPos.y, 2));
+                        return dist < ENTITY_TYPES[b.type].size / 2;
+                    });
+                    
+                    if (clickedUnit && !e.shiftKey) {
+                        selectedUnits = [clickedUnit.id];
+                    } else if (clickedUnit && e.shiftKey) {
+                        if (!selectedUnits.includes(clickedUnit.id)) {
+                            selectedUnits.push(clickedUnit.id);
+                        } else {
+                            selectedUnits = selectedUnits.filter(id => id !== clickedUnit.id);
+                        }
+                    } else if (clickedBuilding && !e.shiftKey) {
+                        selectedUnits = [clickedBuilding.id];
+                    } else if (clickedBuilding && e.shiftKey) {
+                        if (!selectedUnits.includes(clickedBuilding.id)) {
+                            selectedUnits.push(clickedBuilding.id);
+                        } else {
+                            selectedUnits = selectedUnits.filter(id => id !== clickedBuilding.id);
+                        }
+                    } else if (!e.shiftKey) {
+                        selectedUnits = [];
+                    }
+                    updateSelection();
+                }
+            }
+        }
+
+        function handleMouseMove(e) {
+            mousePos = { x: e.clientX, y: e.clientY };
+            
+            if (isDragging) {
+                camera.x = (e.clientX - dragStart.x) / camera.zoom + dragStartCameraX;
+                camera.y = (e.clientY - dragStart.y) / camera.zoom + dragStartCameraY;
+                camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - gameCanvas.width / camera.zoom));
+                camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - gameCanvas.height / camera.zoom));
+            }
+        }
+
+        function handleMouseUp(e) {
+            if (e.button === 1) {
+                isDragging = false;
+            } else if (e.button === 0 && isSelecting) {
+                isSelecting = false;
+                const worldStart = getWorldPos(selectionStart.x, selectionStart.y);
+                const worldEnd = getWorldPos(e.clientX, e.clientY);
+                
+                const minX = Math.min(worldStart.x, worldEnd.x);
+                const maxX = Math.max(worldStart.x, worldEnd.x);
+                const minY = Math.min(worldStart.y, worldEnd.y);
+                const maxY = Math.max(worldStart.y, worldEnd.y);
+                
+                if (maxX - minX > 10 || maxY - minY > 10) {
+                    if (!e.shiftKey) selectedUnits = [];
+                    gameData.units.forEach(unit => {
+                        if (unit.playerColor === 'blue' &&
+                            unit.x >= minX && unit.x <= maxX &&
+                            unit.y >= minY && unit.y <= maxY) {
+                            if (!selectedUnits.includes(unit.id)) {
+                                selectedUnits.push(unit.id);
+                            }
+                        }
+                    });
+                    // 同时检查建筑
+                    gameData.buildings.forEach(building => {
+                        if (building.playerColor === 'blue' &&
+                            building.x >= minX && building.x <= maxX &&
+                            building.y >= minY && building.y <= maxY) {
+                            if (!selectedUnits.includes(building.id)) {
+                                selectedUnits.push(building.id);
+                            }
+                        }
+                    });
+                    updateSelection();
+                }
+            } else if (e.button === 2) {
+                if (buildMode) {
+                    buildMode = null;
+                } else if (selectedUnits.length > 0) {
+                    const worldPos = getWorldPos(e.clientX, e.clientY);
+                    
+                    const clickedEnemy = gameData.units.find(u => {
+                        if (u.playerColor !== 'red') return false;
+                        const dist = Math.sqrt(Math.pow(u.x - worldPos.x, 2) + Math.pow(u.y - worldPos.y, 2));
+                        return dist < ENTITY_TYPES[u.type].size + 10;
+                    });
+                    
+                    const clickedEnemyBuilding = gameData.buildings.find(b => {
+                        if (b.playerColor !== 'red') return false;
+                        const dist = Math.sqrt(Math.pow(b.x - worldPos.x, 2) + Math.pow(b.y - worldPos.y, 2));
+                        return dist < ENTITY_TYPES[b.type].size / 2 + 10;
+                    });
+                    
+                    if (clickedEnemy || clickedEnemyBuilding) {
+                        const target = clickedEnemy || clickedEnemyBuilding;
+                        const targetType = clickedEnemy ? 'unit' : 'building';
+                        
+                        selectedUnits.forEach(unitId => {
+                            const unit = gameData.units.find(u => u.id === unitId && u.playerColor === 'blue');
+                            if (unit && unit.type !== 'villager' && unit.type !== 'trader') {
+                                unit.attackTarget = { id: target.id, type: targetType };
+                                unit.patrolPath = null;
+                                unit.patrolIndex = 0;
+                            }
+                        });
+                        
+                        // 播放命令响应音效
+                        playSound('command');
+                        showMessage(`${selectedUnits.length}个单位正在攻击！`);
+                    } else {
+                        // 检查是否是巡逻模式（Shift+右键）
+                        if (e.shiftKey) {
+                            // 巡逻模式：攻击路径上的敌人
+                            selectedUnits.forEach(unitId => {
+                                const unit = gameData.units.find(u => u.id === unitId && u.playerColor === 'blue');
+                                if (unit && unit.type !== 'villager' && unit.type !== 'trader') {
+                                    unit.attackTarget = null;
+                                    if (!unit.patrolPath) {
+                                        unit.patrolPath = [];
+                                    }
+                                    unit.patrolPath.push({x: worldPos.x, y: worldPos.y});
+                                    unit.patrolIndex = 0;
+                                    unit.state = 'patrolling';
+                                }
+                            });
+                            // 播放命令响应音效
+                            playSound('command');
+                            showMessage(`${selectedUnits.length}个单位开始巡逻！`);
+                        } else {
+                            // 普通移动：忽略路上敌人，到达后攻击附近敌人
+                            selectedUnits.forEach(unitId => {
+                                const unit = gameData.units.find(u => u.id === unitId);
+                                if (unit) {
+                                    unit.attackTarget = null;
+                                    unit.patrolPath = null;
+                                    unit.patrolIndex = 0;
+                                    unit.state = 'moving';
+                                }
+                            });
+                            // 播放命令响应音效
+                            playSound('command');
+                            moveUnits(worldPos.x, worldPos.y);
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            if (e.deltaY < 0) {
+                camera.zoom = Math.min(camera.zoom + zoomSpeed, 2);
+            } else {
+                camera.zoom = Math.max(camera.zoom - zoomSpeed, 0.5);
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (e.key >= '1' && e.key <= '9') {
+                const groupNum = parseInt(e.key);
+                if (e.ctrlKey) {
+                    if (selectedUnits.length > 0) {
+                        gameData.controlGroups[groupNum] = [...selectedUnits];
+                        showMessage(`编队 ${groupNum} 已保存`);
+                    }
+                } else {
+                    if (gameData.controlGroups[groupNum]) {
+                        selectedUnits = [...gameData.controlGroups[groupNum]];
+                        updateSelection();
+                        showMessage(`选中编队 ${groupNum}`);
+                    }
+                }
+            }
+        }
+
+        function moveUnits(targetX, targetY) {
+            const formation = FORMATIONS[currentFormation];
+            const units = selectedUnits.map(id => gameData.units.find(u => u.id === id)).filter(u => u && u.playerColor === 'blue');
+            
+            units.forEach((unit, index) => {
+                let offsetX, offsetY;
+                
+                if (currentFormation === 'wedge') {
+                    const row = Math.floor(Math.sqrt(index * 2));
+                    const posInRow = index - row * (row + 1) / 2;
+                    offsetX = (posInRow - row / 2) * formation.spacing;
+                    offsetY = row * formation.spacing * 0.7;
+                } else {
+                    const col = index % formation.cols;
+                    const row = Math.floor(index / formation.cols);
+                    offsetX = col * formation.spacing - ((formation.cols - 1) * formation.spacing) / 2;
+                    offsetY = row * formation.spacing - (Math.ceil(units.length / formation.cols) - 1) * formation.spacing / 2;
+                }
+                
+                unit.targetX = targetX + offsetX;
+                unit.targetY = targetY + offsetY;
+            });
+            
+            showMessage(`${units.length}个单位移动中！阵型: ${formation.name}`);
+        }
+
+        function updateSelection() {
+            updateSelectionPanel();
+            updateCommandPanel();
+        }
+
+        function updateSelectionPanel() {
+            const panel = document.getElementById('selection-panel');
+            if (selectedUnits.length === 0) {
+                panel.innerHTML = '<h3>未选择</h3><p>拖拽框选或点击选择单位/建筑</p>';
+                return;
+            }
+            if (selectedUnits.length === 1) {
+                const unit = gameData.units.find(u => u.id === selectedUnits[0]);
+                const building = gameData.buildings.find(b => b.id === selectedUnits[0]);
+                
+                if (unit) {
+                    const typeInfo = ENTITY_TYPES[unit.type];
+                    panel.innerHTML = `
+                        <h3>${typeInfo.name}</h3>
+                        <p>生命: ${Math.floor(unit.health)}/${unit.maxHealth}</p>
+                        ${typeInfo.attack ? `<p>攻击: ${typeInfo.attack}</p>` : ''}
+                        ${typeInfo.range ? `<p>射程: ${typeInfo.range}</p>` : ''}
+                        <p>阵营: ${unit.playerColor === 'blue' ? '我方' : '敌方'}</p>
+                    `;
+                } else if (building) {
+                    const typeInfo = ENTITY_TYPES[building.type];
+                    panel.innerHTML = `
+                        <h3>${typeInfo.name}</h3>
+                        <p>生命: ${Math.floor(building.health)}/${building.maxHealth}</p>
+                        ${typeInfo.attack ? `<p>攻击: ${typeInfo.attack}</p>` : ''}
+                        ${typeInfo.range ? `<p>射程: ${typeInfo.range}</p>` : ''}
+                        <p>阵营: ${building.playerColor === 'blue' ? '我方' : '敌方'}</p>
+                    `;
+                }
+            } else {
+                const unitCount = gameData.units.filter(u => selectedUnits.includes(u.id)).length;
+                const buildingCount = gameData.buildings.filter(b => selectedUnits.includes(b.id)).length;
+                panel.innerHTML = `
+                    <h3>已选择</h3>
+                    <p class="unit-count">单位: ${unitCount}</p>
+                    <p class="unit-count">建筑: ${buildingCount}</p>
+                `;
+            }
+        }
+
+        function updateCommandPanel() {
+            const panel = document.getElementById('command-panel');
+            panel.innerHTML = '';
+            
+            // 检查是否选择了单位
+            const selectedUnitsList = gameData.units.filter(u => selectedUnits.includes(u.id));
+            const hasUnits = selectedUnitsList.length > 0;
+            
+            // 检查是否选择了建筑
+            const selectedBuildings = gameData.buildings.filter(b => 
+                selectedUnits.some(id => b.id === id) && b.playerColor === 'blue'
+            );
+            const hasBuildings = selectedBuildings.length > 0;
+            
+            // 如果选择了单位，显示阵型按钮
+            if (hasUnits) {
+                Object.entries(FORMATIONS).forEach(([key, formation]) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'command-btn' + (currentFormation === key ? ' selected' : '');
+                    btn.innerHTML = `<span class="icon">${key === 'line' ? '➖' : key === 'square' ? '⬜' : key === 'column' ? '📏' : '🔺'}</span><span class="label">${formation.name}</span>`;
+                    btn.onclick = () => {
+                        currentFormation = key;
+                        updateCommandPanel();
+                        showMessage(`阵型切换为: ${formation.name}`);
+                    };
+                    panel.appendChild(btn);
+                });
+            }
+            
+            // 检查是否有农民
+            const hasVillager = selectedUnits.some(id => {
+                const u = gameData.units.find(x => x.id === id);
+                return u && u.type === 'villager' && u.playerColor === 'blue';
+            });
+            
+            const hasTownCenter = selectedBuildings.some(b => b.type.includes('town_center'));
+            const hasBarracks = selectedBuildings.some(b => b.type === 'barracks');
+            const hasSiegeWorkshop = selectedBuildings.some(b => b.type === 'siege_workshop');
+            const hasMarket = selectedBuildings.some(b => b.type === 'market');
+            
+            if (hasVillager) {
+                addCommandButton('🏠', '建造', () => showBuildMenu());
+            }
+            
+            if (hasTownCenter) {
+                addCommandButton('👨‍🌾', '50🌾', () => createUnit('villager'));
+                if (gameData.age === 1) {
+                    addCommandButton('⬆️', '城堡时代', () => upgradeTownCenter(), '500🪵 500🌾 200💰');
+                } else if (gameData.age === 2) {
+                    addCommandButton('⬆️', '帝国时代', () => upgradeTownCenter(), '1000🪵 1000🌾 500💰 300🪨');
+                }
+            }
+            
+            if (hasBarracks) {
+                addCommandButton('⚔️', '60🌾 20💰', () => createUnit('soldier'));
+                if (gameData.age >= 2) {
+                    addCommandButton('🐴', '80🌾 60💰', () => createUnit('knight'));
+                    addCommandButton('🏹', '50🌾 40💰', () => createUnit('archer'));
+                }
+            }
+            
+            if (hasSiegeWorkshop) {
+                addCommandButton('🪨', '200🪵 200💰', () => createUnit('catapult'));
+            }
+            
+            if (hasMarket) {
+                addCommandButton('🐫', '50🪵 50🌾', () => createUnit('trader'));
+            }
+        }
+
+        function addCommandButton(icon, label, onClick, cost) {
+            const panel = document.getElementById('command-panel');
+            const btn = document.createElement('button');
+            btn.className = 'command-btn';
+            btn.innerHTML = `<span class="icon">${icon}</span>${cost ? `<span class="cost">${cost}</span>` : ''}<span class="label">${label}</span>`;
+            btn.onclick = onClick;
+            panel.appendChild(btn);
+        }
+
+        function showBuildMenu() {
+            const panel = document.getElementById('command-panel');
+            panel.innerHTML = '';
+            addCommandButton('❌', '取消', () => {
+                buildMode = null;
+                updateCommandPanel();
+            });
+            addCommandButton('🛡️', '兵营', () => startBuildMode('barracks'), '175🪵');
+            addCommandButton('⚒️', '攻城厂', () => startBuildMode('siege_workshop'), '200🪵 100🪨');
+            addCommandButton('🌾', '农田', () => startBuildMode('farm'), '60🪵');
+            addCommandButton('🏪', '市场', () => startBuildMode('market'), '200🪵 100🪨');
+            addCommandButton('🪵', '木材厂', () => startBuildMode('lumber_camp'), '100🪵');
+            addCommandButton('🌾', '磨坊', () => startBuildMode('mill'), '100🪵');
+            addCommandButton('⛏️', '矿厂', () => startBuildMode('mining_camp'), '100🪵');
+            addCommandButton('🧱', '围墙', () => startBuildMode('wall'), '10🪨');
+            addCommandButton('🗼', '箭塔', () => startBuildMode('watch_tower'), '150🪵 50🪨');
+            if (gameData.age >= 2) {
+                addCommandButton('🏯', '炮楼', () => startBuildMode('castle_tower'), '200🪵 100🪨');
+            }
+        }
+
+        function startBuildMode(buildingType) {
+            const cost = BUILD_COSTS[buildingType];
+            for (const [resource, amount] of Object.entries(cost)) {
+                if (gameData.resources[resource] < amount) {
+                    showMessage('资源不足！');
+                    return;
+                }
+            }
+            buildMode = buildingType;
+            selectedUnits = [];
+            updateSelection();
+            showMessage('点击地图放置建筑，右键取消');
+        }
+
+        function checkBuildingCollision(x, y, size) {
+            for (const building of gameData.buildings) {
+                const otherSize = ENTITY_TYPES[building.type].size;
+                const minDistance = (size + otherSize) / 2 + 15;
+                if (Math.abs(x - building.x) < minDistance &&
+                    Math.abs(y - building.y) < minDistance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function placeBuilding(x, y) {
+            const buildingSize = ENTITY_TYPES[buildMode].size;
+            if (checkBuildingCollision(x, y, buildingSize)) {
+                showMessage('此位置已有建筑！请换个位置');
+                return;
+            }
+            const cost = BUILD_COSTS[buildMode];
+            for (const [resource, amount] of Object.entries(cost)) {
+                gameData.resources[resource] -= amount;
+            }
+            const newBuilding = {
+                id: Date.now(),
+                type: buildMode,
+                x: x,
+                y: y,
+                health: ENTITY_TYPES[buildMode].health,
+                maxHealth: ENTITY_TYPES[buildMode].health,
+                playerColor: 'blue'
+            };
+            gameData.buildings.push(newBuilding);
+            if (buildMode === 'watch_tower' || buildMode === 'castle_tower') {
+                gameData.towers.push(newBuilding);
+            }
+            // 播放建造音效
+            playSound('build');
+            buildMode = null;
+            updateResourceDisplay();
+            showMessage(`${ENTITY_TYPES[buildMode || newBuilding.type].name}建造完成！`);
+        }
+
+        function createUnit(type) {
+            const producer = gameData.buildings.find(b => selectedUnits.includes(b.id));
+            if (!producer) return;
+            const cost = UNIT_COSTS[type];
+            for (const [resource, amount] of Object.entries(cost)) {
+                if (gameData.resources[resource] < amount) {
+                    showMessage('资源不足！');
+                    return;
+                }
+            }
+            for (const [resource, amount] of Object.entries(cost)) {
+                gameData.resources[resource] -= amount;
+            }
+            const newUnit = {
+                id: Date.now(),
+                type: type,
+                x: producer.x + 100,
+                y: producer.y,
+                health: ENTITY_TYPES[type].health,
+                maxHealth: ENTITY_TYPES[type].health,
+                playerColor: 'blue',
+                targetX: null,
+                targetY: null,
+                carrying: null,
+                carryAmount: 0,
+                attackTarget: null,
+                lastAttackTime: 0
+            };
+            gameData.units.push(newUnit);
+            updateResourceDisplay();
+            showMessage(`${ENTITY_TYPES[type].name}生产完成！`);
+        }
+
+        function upgradeTownCenter() {
+            if (gameData.age === 1) {
+                if (gameData.resources.wood >= 500 && gameData.resources.food >= 500 && gameData.resources.gold >= 200) {
+                    gameData.resources.wood -= 500;
+                    gameData.resources.food -= 500;
+                    gameData.resources.gold -= 200;
+                    const tc = gameData.buildings.find(b => b.type === 'town_center' && b.playerColor === 'blue');
+                    if (tc) {
+                        tc.type = 'town_center_age2';
+                        tc.health = 3000;
+                        tc.maxHealth = 3000;
+                    }
+                    gameData.age = 2;
+                    showMessage('升级到城堡时代！解锁骑士、弓箭手和炮楼');
+                } else {
+                    showMessage('资源不足！');
+                }
+            } else if (gameData.age === 2) {
+                if (gameData.resources.wood >= 1000 && gameData.resources.food >= 1000 && gameData.resources.gold >= 500 && gameData.resources.stone >= 300) {
+                    gameData.resources.wood -= 1000;
+                    gameData.resources.food -= 1000;
+                    gameData.resources.gold -= 500;
+                    gameData.resources.stone -= 300;
+                    const tc = gameData.buildings.find(b => b.type === 'town_center_age2' && b.playerColor === 'blue');
+                    if (tc) {
+                        tc.type = 'town_center_age3';
+                        tc.health = 4000;
+                        tc.maxHealth = 4000;
+                    }
+                    gameData.age = 3;
+                    showMessage('升级到帝国时代！获得最终科技');
+                } else {
+                    showMessage('资源不足！');
+                }
+            }
+            updateResourceDisplay();
+            updateCommandPanel();
+        }
+
+        function updateResourceDisplay() {
+            document.getElementById('resource-wood').textContent = Math.floor(gameData.resources.wood);
+            document.getElementById('resource-food').textContent = Math.floor(gameData.resources.food);
+            document.getElementById('resource-gold').textContent = Math.floor(gameData.resources.gold);
+            document.getElementById('resource-stone').textContent = Math.floor(gameData.resources.stone);
+            document.getElementById('population').textContent = `${gameData.population}/${gameData.populationCap}`;
+            const ageNames = ['黑暗时代', '封建时代', '城堡时代', '帝国时代'];
+            document.getElementById('age-display').textContent = ageNames[gameData.age];
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('game-message');
+            msg.textContent = text;
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 3000);
+        }
+
+        function handleMinimapClick(e) {
+            const rect = minimapCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / 200 * MAP_WIDTH;
+            const y = (e.clientY - rect.top) / 150 * MAP_HEIGHT;
+            camera.x = x - gameCanvas.width / 2;
+            camera.y = y - gameCanvas.height / 2;
+            camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - gameCanvas.width));
+            camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - gameCanvas.height));
+            // 点击小地图时恢复原始缩放
+            resetZoom();
+        }
+
+        function resetZoom() {
+            camera.zoom = 1;
+            showMessage('已恢复原始尺寸');
+        }
+
+        // 建筑图标映射
+        const BUILDING_ICONS = {
+            town_center: '🏛️',
+            town_center_age2: '🏯',
+            town_center_age3: '🕌',
+            barracks: '🛡️',
+            siege_workshop: '⚒️',
+            farm: '🌾',
+            market: '🏪',
+            lumber_camp: '🪵',
+            mill: '🌾',
+            mining_camp: '⛏️',
+            wall: '🧱',
+            watch_tower: '🗼',
+            castle_tower: '🏯'
+        };
+
+        // 音效系统 - 使用本地Howler.js
+        const sounds = {
+            chop: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-small-axe-chopping-wood-1339.mp3'],
+                volume: 0.3
+            }),
+            mine: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-mining-in-a-cave-2200.mp3'],
+                volume: 0.3
+            }),
+            harvest: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-harvesting-wheat-2212.mp3'],
+                volume: 0.3
+            }),
+            hunt: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-arrow-hit-target-2726.mp3'],
+                volume: 0.3
+            }),
+            attack: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-sword-fight-impact-2727.mp3'],
+                volume: 0.3
+            }),
+            build: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-construction-work-building-2647.mp3'],
+                volume: 0.3
+            }),
+            train: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-medieval-trumpet-fanfare-2201.mp3'],
+                volume: 0.3
+            }),
+            die: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-man-screaming-in-pain-2209.mp3'],
+                volume: 0.3
+            }),
+            explosion: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-explosion-blast-2208.mp3'],
+                volume: 0.3
+            }),
+            sheep: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-sheep-bleating-2214.mp3'],
+                volume: 0.3
+            }),
+            deer: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-deer-call-2213.mp3'],
+                volume: 0.3
+            }),
+            boar: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-wild-boar-grunt-2215.mp3'],
+                volume: 0.3
+            }),
+            command: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-confirmation-tone-2870.mp3'],
+                volume: 0.3
+            }),
+            default: new Howl({
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3'],
+                volume: 0.3
+            })
+        };
+
+        // 音效播放函数
+        function playSound(type) {
+            try {
+                if (sounds[type]) {
+                    sounds[type].play();
+                } else {
+                    sounds.default.play();
+                }
+            } catch(e) {
+                console.log('音效播放失败:', e);
+            }
+        }
+
+        let gameLoopId;
+
+        function gameLoop(timestamp) {
+            const deltaTime = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            
+            update(deltaTime);
+            render();
+            renderMinimap();
+            
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function update(dt) {
+            const now = Date.now();
+            
+            gameData.units.forEach(unit => {
+                if (unit.attackTarget) {
+                    let target;
+                    if (unit.attackTarget.type === 'unit') {
+                        target = gameData.units.find(u => u.id === unit.attackTarget.id);
+                    } else {
+                        target = gameData.buildings.find(b => b.id === unit.attackTarget.id);
+                    }
+                    
+                    if (target) {
+                        const unitInfo = ENTITY_TYPES[unit.type];
+                        const attackRange = unitInfo.range || 50;
+                        const distance = Math.sqrt(Math.pow(target.x - unit.x, 2) + Math.pow(target.y - unit.y, 2));
+                        
+                        if (distance > attackRange) {
+                            unit.targetX = target.x;
+                            unit.targetY = target.y;
+                            
+                            const dx = unit.targetX - unit.x;
+                            const dy = unit.targetY - unit.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (dist > 2) {
+                                const speed = unitInfo.speed * 60;
+                                unit.x += (dx / dist) * speed * dt;
+                                unit.y += (dy / dist) * speed * dt;
+                            }
+                        } else {
+                            unit.targetX = null;
+                            unit.targetY = null;
+                            
+                            const attackCooldown = 1000;
+                            if (now - unit.lastAttackTime > attackCooldown) {
+                                unit.lastAttackTime = now;
+                                
+                                target.health -= unitInfo.attack;
+                                
+                                // 播放攻击音效
+                                playSound('attack');
+                                
+                                gameData.attackEffects.push({
+                                    x: target.x,
+                                    y: target.y,
+                                    type: unit.type === 'archer' ? 'arrow' : 'melee',
+                                    time: now,
+                                    duration: 300
+                                });
+                                
+                                if (target.health <= 0) {
+                                    if (unit.attackTarget.type === 'unit') {
+                                        const index = gameData.units.findIndex(u => u.id === target.id);
+                                        if (index > -1) {
+                                            // 减少人口（如果是自己的单位）
+                                            if (target.playerColor === 'blue') {
+                                                const unitPopulation = ENTITY_TYPES[target.type].population || 1;
+                                                gameData.population = Math.max(0, gameData.population - unitPopulation);
+                                                updateResourceDisplay();
+                                            }
+                                            // 播放死亡音效
+                                            playSound('die');
+                                            gameData.units.splice(index, 1);
+                                            showMessage('消灭了一个敌人！');
+                                        }
+                                    } else {
+                                        const index = gameData.buildings.findIndex(b => b.id === target.id);
+                                        if (index > -1) {
+                                            // 播放拆房音效
+                                            playSound('explosion');
+                                            gameData.buildings.splice(index, 1);
+                                            showMessage('摧毁了敌方建筑！');
+                                        }
+                                    }
+                                    unit.attackTarget = null;
+                                    
+                                    // 攻击完成后继续巡逻或移动
+                                    if (unit.patrolPath && unit.patrolPath.length > 0) {
+                                        unit.state = 'patrolling';
+                                    } else if (unit.targetX !== null && unit.targetY !== null) {
+                                        unit.state = 'moving';
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        unit.attackTarget = null;
+                        
+                        // 目标消失后继续巡逻或移动
+                        if (unit.patrolPath && unit.patrolPath.length > 0) {
+                            unit.state = 'patrolling';
+                        } else if (unit.targetX !== null && unit.targetY !== null) {
+                            unit.state = 'moving';
+                        }
+                    }
+                } else if (unit.state === 'patrolling' && unit.patrolPath && unit.patrolPath.length > 0) {
+                    // 巡逻模式
+                    const currentWaypoint = unit.patrolPath[unit.patrolIndex];
+                    const distance = Math.sqrt(Math.pow(currentWaypoint.x - unit.x, 2) + Math.pow(currentWaypoint.y - unit.y, 2));
+                    
+                    if (distance > 2) {
+                        // 移动到当前巡逻点
+                        const dx = currentWaypoint.x - unit.x;
+                        const dy = currentWaypoint.y - unit.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const speed = ENTITY_TYPES[unit.type].speed * 60;
+                        unit.x += (dx / dist) * speed * dt;
+                        unit.y += (dy / dist) * speed * dt;
+                        
+                        // 检查路径上的敌人
+                        const enemies = gameData.units.filter(u => u.playerColor !== unit.playerColor && u.type !== 'villager' && u.type !== 'trader');
+                        let closestEnemy = null;
+                        let closestDistance = Infinity;
+                        
+                        enemies.forEach(enemy => {
+                            const enemyDistance = Math.sqrt(Math.pow(enemy.x - unit.x, 2) + Math.pow(enemy.y - unit.y, 2));
+                            if (enemyDistance < closestDistance && enemyDistance < 150) { // 150像素范围内的敌人
+                                closestDistance = enemyDistance;
+                                closestEnemy = enemy;
+                            }
+                        });
+                        
+                        if (closestEnemy) {
+                            // 发现敌人，开始攻击
+                            unit.attackTarget = { id: closestEnemy.id, type: 'unit' };
+                            unit.state = 'attacking';
+                        }
+                    } else {
+                        // 到达当前巡逻点，移动到下一个
+                        unit.patrolIndex = (unit.patrolIndex + 1) % unit.patrolPath.length;
+                    }
+                } else if (unit.state === 'moving' && unit.targetX !== null && unit.targetY !== null) {
+                    // 普通移动模式
+                    const dx = unit.targetX - unit.x;
+                    const dy = unit.targetY - unit.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist > 2) {
+                        const speed = ENTITY_TYPES[unit.type].speed * 60;
+                        unit.x += (dx / dist) * speed * dt;
+                        unit.y += (dy / dist) * speed * dt;
+                    } else {
+                        // 到达目标点，检查附近敌人
+                        unit.targetX = null;
+                        unit.targetY = null;
+                        unit.state = 'idle';
+                        
+                        // 检查周围敌人
+                        const enemies = gameData.units.filter(u => u.playerColor !== unit.playerColor && u.type !== 'villager' && u.type !== 'trader');
+                        let closestEnemy = null;
+                        let closestDistance = Infinity;
+                        
+                        enemies.forEach(enemy => {
+                            const enemyDistance = Math.sqrt(Math.pow(enemy.x - unit.x, 2) + Math.pow(enemy.y - unit.y, 2));
+                            if (enemyDistance < closestDistance && enemyDistance < 100) { // 100像素范围内的敌人
+                                closestDistance = enemyDistance;
+                                closestEnemy = enemy;
+                            }
+                        });
+                        
+                        if (closestEnemy) {
+                            // 发现附近敌人，开始攻击
+                            unit.attackTarget = { id: closestEnemy.id, type: 'unit' };
+                            unit.state = 'attacking';
+                        }
+                    }
+                } else if (unit.targetX !== null && unit.targetY !== null) {
+                    // 传统移动（兼容旧代码）
+                    const dx = unit.targetX - unit.x;
+                    const dy = unit.targetY - unit.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist > 2) {
+                        const speed = ENTITY_TYPES[unit.type].speed * 60;
+                        unit.x += (dx / dist) * speed * dt;
+                        unit.y += (dy / dist) * speed * dt;
+                    } else {
+                        unit.targetX = null;
+                        unit.targetY = null;
+                    }
+                }
+            });
+            
+            // 箭塔自动攻击
+            gameData.towers.forEach(tower => {
+                if (tower.playerColor !== 'blue') return;
+                const towerInfo = ENTITY_TYPES[tower.type];
+                const enemies = gameData.units.filter(u => u.playerColor === 'red');
+                enemies.forEach(enemy => {
+                    const distance = Math.sqrt(Math.pow(enemy.x - tower.x, 2) + Math.pow(enemy.y - tower.y, 2));
+                    if (distance <= towerInfo.range) {
+                        enemy.health -= towerInfo.attack * dt;
+                        if (enemy.health <= 0) {
+                            const index = gameData.units.findIndex(u => u.id === enemy.id);
+                            if (index > -1) {
+                                gameData.units.splice(index, 1);
+                                showMessage('箭塔消灭了一个敌人！');
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // 城镇中心自动攻击
+            gameData.buildings.forEach(building => {
+                if (building.playerColor !== 'blue' || !building.type.includes('town_center')) return;
+                const buildingInfo = ENTITY_TYPES[building.type];
+                if (!buildingInfo.attack || !buildingInfo.range) return;
+                
+                const enemies = gameData.units.filter(u => u.playerColor === 'red');
+                enemies.forEach(enemy => {
+                    const distance = Math.sqrt(Math.pow(enemy.x - building.x, 2) + Math.pow(enemy.y - building.y, 2));
+                    if (distance <= buildingInfo.range) {
+                        enemy.health -= buildingInfo.attack * dt;
+                        
+                        // 播放攻击音效
+                        playSound('attack');
+                        
+                        // 添加攻击效果
+                        gameData.attackEffects.push({
+                            x: enemy.x,
+                            y: enemy.y,
+                            type: 'arrow',
+                            time: now,
+                            duration: 300
+                        });
+                        
+                        if (enemy.health <= 0) {
+                            const index = gameData.units.findIndex(u => u.id === enemy.id);
+                            if (index > -1) {
+                                gameData.units.splice(index, 1);
+                                showMessage('城镇中心消灭了一个敌人！');
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // 敌方AI逻辑
+            updateEnemyAI(now, dt);
+            
+            gameData.attackEffects = gameData.attackEffects.filter(effect => {
+                return now - effect.time < effect.duration;
+            });
+            
+            // 动物移动逻辑
+            gameData.animals.forEach(animal => {
+                if (now - animal.lastMoveTime > 3000 + Math.random() * 5000) {
+                    // 随机移动
+                    const moveRadius = 50;
+                    animal.targetX = animal.x + (Math.random() * moveRadius * 2 - moveRadius);
+                    animal.targetY = animal.y + (Math.random() * moveRadius * 2 - moveRadius);
+                    animal.lastMoveTime = now;
+                    
+                    // 随机播放动物叫声
+                    if (Math.random() > 0.7) {
+                        if (animal.type === 'sheep') {
+                            playSound('sheep');
+                        } else if (animal.type === 'deer') {
+                            playSound('deer');
+                        } else if (animal.type === 'boar') {
+                            playSound('boar');
+                        }
+                    }
+                }
+                
+                if (animal.targetX !== null && animal.targetY !== null) {
+                    const dx = animal.targetX - animal.x;
+                    const dy = animal.targetY - animal.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist > 2) {
+                        const speed = animal.moveSpeed * 60;
+                        animal.x += (dx / dist) * speed * dt;
+                        animal.y += (dy / dist) * speed * dt;
+                    } else {
+                        animal.targetX = null;
+                        animal.targetY = null;
+                    }
+                }
+            });
+            
+            // 城镇中心炊烟效果
+            gameData.buildings.forEach(building => {
+                if (building.type.includes('town_center') && now % 2000 < 100) {
+                    gameData.smokeEffects.push({
+                        x: building.x + Math.random() * 40 - 20,
+                        y: building.y - building.size / 2 - 20,
+                        time: now,
+                        duration: 3000,
+                        size: 10 + Math.random() * 10
+                    });
+                }
+            });
+            
+            // 更新炊烟效果
+            gameData.smokeEffects = gameData.smokeEffects.filter(effect => {
+                return now - effect.time < effect.duration;
+            });
+            
+            // 农民采集逻辑
+            updateVillagers(now, dt);
+            
+            // 商队贸易逻辑
+            updateTraders(now, dt);
+        }
+
+        // 农民采集更新
+        function updateVillagers(now, dt) {
+            const villagers = gameData.units.filter(u => u.type === 'villager');
+            
+            villagers.forEach(villager => {
+                // 如果正在攻击或移动到攻击目标，不采集
+                if (villager.attackTarget) return;
+                
+                // 农民状态：idle, gathering, delivering, hunting
+                if (!villager.state) {
+                    villager.state = 'idle';
+                }
+                
+                if (villager.state === 'idle') {
+                    // 寻找附近的资源
+                    const nearbyResources = gameData.mapResources.filter(resource => {
+                        if (resource.amount <= 0) return false;
+                        const distance = Math.sqrt(Math.pow(resource.x - villager.x, 2) + Math.pow(resource.y - villager.y, 2));
+                        return distance < 500; // 500像素范围内的资源
+                    });
+                    
+                    // 寻找附近的羊群
+                    const nearbyAnimals = gameData.animals.filter(animal => {
+                        const distance = Math.sqrt(Math.pow(animal.x - villager.x, 2) + Math.pow(animal.y - villager.y, 2));
+                        return distance < 300; // 300像素范围内的动物
+                    });
+                    
+                    // 优先采集资源，然后狩猎
+                    if (nearbyResources.length > 0) {
+                        // 找到最近的资源
+                        let closestResource = null;
+                        let closestDistance = Infinity;
+                        
+                        nearbyResources.forEach(resource => {
+                            const distance = Math.sqrt(Math.pow(resource.x - villager.x, 2) + Math.pow(resource.y - villager.y, 2));
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestResource = resource;
+                            }
+                        });
+                        
+                        if (closestResource) {
+                            villager.targetX = closestResource.x;
+                            villager.targetY = closestResource.y;
+                            villager.targetResource = closestResource;
+                            villager.state = 'moving_to_resource';
+                        }
+                    } else if (nearbyAnimals.length > 0) {
+                        // 找到最近的动物
+                        let closestAnimal = null;
+                        let closestDistance = Infinity;
+                        
+                        nearbyAnimals.forEach(animal => {
+                            const distance = Math.sqrt(Math.pow(animal.x - villager.x, 2) + Math.pow(animal.y - villager.y, 2));
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestAnimal = animal;
+                            }
+                        });
+                        
+                        if (closestAnimal) {
+                            villager.targetX = closestAnimal.x;
+                            villager.targetY = closestAnimal.y;
+                            villager.targetAnimal = closestAnimal;
+                            villager.state = 'hunting';
+                        }
+                    }
+                    
+                } else if (villager.state === 'moving_to_resource') {
+                    if (villager.targetResource && villager.targetResource.amount > 0) {
+                        const distance = Math.sqrt(Math.pow(villager.targetResource.x - villager.x, 2) + Math.pow(villager.targetResource.y - villager.y, 2));
+                        
+                        if (distance > 20) {
+                            // 向资源点移动
+                            const dx = villager.targetResource.x - villager.x;
+                            const dy = villager.targetResource.y - villager.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const speed = ENTITY_TYPES[villager.type].speed * 60;
+                            villager.x += (dx / dist) * speed * dt;
+                            villager.y += (dy / dist) * speed * dt;
+                        } else {
+                            // 到达资源点，开始采集
+                            villager.targetX = null;
+                            villager.targetY = null;
+                            villager.state = 'gathering';
+                            villager.gatherStartTime = now;
+                        }
+                    } else {
+                        // 资源已耗尽，回到 idle 状态
+                        villager.state = 'idle';
+                        villager.targetResource = null;
+                    }
+                    
+                } else if (villager.state === 'gathering') {
+                    // 采集时间：2秒
+                    if (now - villager.gatherStartTime > 2000) {
+                        // 采集完成
+                        const resourceType = villager.targetResource.type;
+                        const gatherAmount = 10; // 每次采集10单位
+                        
+                        // 减少资源量
+                        villager.targetResource.amount = Math.max(0, villager.targetResource.amount - gatherAmount);
+                        
+                        // 播放采集音效
+                        let soundType = 'gather';
+                        if (resourceType === 'wood') soundType = 'chop';
+                        else if (resourceType === 'gold' || resourceType === 'stone') soundType = 'mine';
+                        else if (resourceType === 'food') soundType = 'harvest';
+                        playSound(soundType);
+                        
+                        // 农民携带资源
+                        villager.carrying = resourceType;
+                        villager.carryAmount = gatherAmount;
+                        
+                        // 寻找最近的交付点
+                        const deliveryBuildings = gameData.buildings.filter(building => {
+                            if (building.playerColor !== villager.playerColor) return false;
+                            if (building.type === 'town_center' || building.type === 'town_center_age2' || building.type === 'town_center_age3') return true;
+                            if (resourceType === 'wood' && (building.type === 'lumber_camp' || building.type === 'market')) return true;
+                            if (resourceType === 'food' && (building.type === 'mill' || building.type === 'farm' || building.type === 'market')) return true;
+                            if (resourceType === 'gold' && (building.type === 'mining_camp' || building.type === 'market')) return true;
+                            if (resourceType === 'stone' && (building.type === 'mining_camp' || building.type === 'market')) return true;
+                            return false;
+                        });
+                        
+                        if (deliveryBuildings.length > 0) {
+                            // 找到最近的交付点
+                            let closestDelivery = null;
+                            let closestDistance = Infinity;
+                            
+                            deliveryBuildings.forEach(building => {
+                                const distance = Math.sqrt(Math.pow(building.x - villager.x, 2) + Math.pow(building.y - villager.y, 2));
+                                if (distance < closestDistance) {
+                                    closestDistance = distance;
+                                    closestDelivery = building;
+                                }
+                            });
+                            
+                            if (closestDelivery) {
+                                villager.targetX = closestDelivery.x;
+                                villager.targetY = closestDelivery.y;
+                                villager.targetDelivery = closestDelivery;
+                                villager.state = 'delivering';
+                            }
+                        } else {
+                            // 没有交付点，回到 idle 状态
+                            villager.state = 'idle';
+                            villager.carrying = null;
+                            villager.carryAmount = 0;
+                        }
+                    }
+                    
+                } else if (villager.state === 'hunting') {
+                    if (villager.targetAnimal) {
+                        const distance = Math.sqrt(Math.pow(villager.targetAnimal.x - villager.x, 2) + Math.pow(villager.targetAnimal.y - villager.y, 2));
+                        
+                        if (distance > 15) {
+                            // 向动物移动
+                            const dx = villager.targetAnimal.x - villager.x;
+                            const dy = villager.targetAnimal.y - villager.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const speed = ENTITY_TYPES[villager.type].speed * 60;
+                            villager.x += (dx / dist) * speed * dt;
+                            villager.y += (dy / dist) * speed * dt;
+                        } else {
+                            // 到达动物，开始狩猎
+                            villager.targetAnimal.health -= 5 * dt;
+                            
+                            if (villager.targetAnimal.health <= 0) {
+                                // 狩猎完成，根据动物类型获得不同食物量
+                                let gatherAmount = 15; // 默认15单位食物
+                                if (villager.targetAnimal.type === 'deer') {
+                                    gatherAmount = 20; // 鹿提供更多食物
+                                } else if (villager.targetAnimal.type === 'boar') {
+                                    gatherAmount = 25; // 野猪提供最多食物
+                                }
+                                
+                                // 播放狩猎音效
+                                playSound('hunt');
+                                
+                                // 农民携带资源
+                                villager.carrying = 'food';
+                                villager.carryAmount = gatherAmount;
+                                
+                                // 移除动物
+                                const index = gameData.animals.findIndex(a => a.id === villager.targetAnimal.id);
+                                if (index > -1) {
+                                    gameData.animals.splice(index, 1);
+                                }
+                                
+                                // 寻找最近的交付点
+                                const deliveryBuildings = gameData.buildings.filter(building => {
+                                    if (building.playerColor !== villager.playerColor) return false;
+                                    if (building.type === 'town_center' || building.type === 'town_center_age2' || building.type === 'town_center_age3') return true;
+                                    if (building.type === 'mill' || building.type === 'farm' || building.type === 'market') return true;
+                                    return false;
+                                });
+                                
+                                if (deliveryBuildings.length > 0) {
+                                    // 找到最近的交付点
+                                    let closestDelivery = null;
+                                    let closestDistance = Infinity;
+                                    
+                                    deliveryBuildings.forEach(building => {
+                                        const distance = Math.sqrt(Math.pow(building.x - villager.x, 2) + Math.pow(building.y - villager.y, 2));
+                                        if (distance < closestDistance) {
+                                            closestDistance = distance;
+                                            closestDelivery = building;
+                                        }
+                                    });
+                                    
+                                    if (closestDelivery) {
+                                        villager.targetX = closestDelivery.x;
+                                        villager.targetY = closestDelivery.y;
+                                        villager.targetDelivery = closestDelivery;
+                                        villager.state = 'delivering';
+                                    }
+                                } else {
+                                    // 没有交付点，回到 idle 状态
+                                    villager.state = 'idle';
+                                    villager.carrying = null;
+                                    villager.carryAmount = 0;
+                                }
+                            }
+                        }
+                    } else {
+                        // 动物不存在，回到 idle 状态
+                        villager.state = 'idle';
+                        villager.targetAnimal = null;
+                    }
+                    
+                } else if (villager.state === 'delivering') {
+                    if (villager.targetDelivery) {
+                        const distance = Math.sqrt(Math.pow(villager.targetDelivery.x - villager.x, 2) + Math.pow(villager.targetDelivery.y - villager.y, 2));
+                        
+                        if (distance > 30) {
+                            // 向交付点移动
+                            const dx = villager.targetDelivery.x - villager.x;
+                            const dy = villager.targetDelivery.y - villager.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const speed = ENTITY_TYPES[villager.type].speed * 60;
+                            villager.x += (dx / dist) * speed * dt;
+                            villager.y += (dy / dist) * speed * dt;
+                        } else {
+                            // 到达交付点，交付资源
+                            gameData.resources[villager.carrying] += villager.carryAmount;
+                            
+                            // 更新资源显示
+                            updateResourceDisplay();
+                            
+                            // 重置状态
+                            villager.carrying = null;
+                            villager.carryAmount = 0;
+                            villager.targetX = null;
+                            villager.targetY = null;
+                            villager.targetDelivery = null;
+                            villager.state = 'idle';
+                        }
+                    } else {
+                        // 交付点不存在，回到 idle 状态
+                        villager.state = 'idle';
+                        villager.carrying = null;
+                        villager.carryAmount = 0;
+                    }
+                }
+            });
+        }
+
+        // 敌方AI更新
+        function updateEnemyAI(now, dt) {
+            const enemyUnits = gameData.units.filter(u => u.playerColor === 'red' && u.type !== 'villager' && u.type !== 'trader');
+            const enemyVillagers = gameData.units.filter(u => u.playerColor === 'red' && u.type === 'villager');
+            const playerUnits = gameData.units.filter(u => u.playerColor === 'blue');
+            const playerBuildings = gameData.buildings.filter(b => b.playerColor === 'blue');
+            const enemyBuildings = gameData.buildings.filter(b => b.playerColor === 'red');
+            
+            // 获取当前难度设置
+            const difficulty = gameData.difficulty || 'medium';
+            const aiSettings = gameData.aiSettings[difficulty];
+            
+            // AI攻击范围检测
+            const AI_DETECTION_RANGE = 400;
+            const AI_ATTACK_RANGE = 50;
+            
+            // 敌方农民自动采集
+            enemyVillagers.forEach(villager => {
+                if (villager.attackTarget) return;
+                
+                if (!villager.state) {
+                    villager.state = 'idle';
+                }
+                
+                if (villager.state === 'idle') {
+                    const nearbyResources = gameData.mapResources.filter(resource => {
+                        if (resource.amount <= 0) return false;
+                        const distance = Math.sqrt(Math.pow(resource.x - villager.x, 2) + Math.pow(resource.y - villager.y, 2));
+                        return distance < 400;
+                    });
+                    
+                    if (nearbyResources.length > 0) {
+                        let closestResource = null;
+                        let closestDistance = Infinity;
+                        
+                        nearbyResources.forEach(resource => {
+                            const distance = Math.sqrt(Math.pow(resource.x - villager.x, 2) + Math.pow(resource.y - villager.y, 2));
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestResource = resource;
+                            }
+                        });
+                        
+                        if (closestResource) {
+                            villager.targetX = closestResource.x;
+                            villager.targetY = closestResource.y;
+                            villager.targetResource = closestResource;
+                            villager.state = 'moving_to_resource';
+                        }
+                    }
+                    
+                } else if (villager.state === 'moving_to_resource') {
+                    if (villager.targetResource && villager.targetResource.amount > 0) {
+                        const distance = Math.sqrt(Math.pow(villager.targetResource.x - villager.x, 2) + Math.pow(villager.targetResource.y - villager.y, 2));
+                        
+                        if (distance < 20) {
+                            villager.targetX = null;
+                            villager.targetY = null;
+                            villager.state = 'gathering';
+                            villager.gatherStartTime = now;
+                        }
+                    } else {
+                        villager.state = 'idle';
+                        villager.targetResource = null;
+                    }
+                    
+                } else if (villager.state === 'gathering') {
+                    if (now - villager.gatherStartTime > 2000) {
+                        const resourceType = villager.targetResource.type;
+                        const gatherAmount = 8 * aiSettings.resourceGatherRate;
+                        
+                        villager.targetResource.amount = Math.max(0, villager.targetResource.amount - gatherAmount);
+                        villager.carrying = resourceType;
+                        villager.carryAmount = gatherAmount;
+                        
+                        const deliveryBuildings = enemyBuildings.filter(building => {
+                            if (building.type === 'town_center' || building.type === 'town_center_age2' || building.type === 'town_center_age3') return true;
+                            if (resourceType === 'wood' && (building.type === 'lumber_camp' || building.type === 'market')) return true;
+                            if (resourceType === 'food' && (building.type === 'mill' || building.type === 'farm' || building.type === 'market')) return true;
+                            if (resourceType === 'gold' && (building.type === 'mining_camp' || building.type === 'market')) return true;
+                            if (resourceType === 'stone' && (building.type === 'mining_camp' || building.type === 'market')) return true;
+                            return false;
+                        });
+                        
+                        if (deliveryBuildings.length > 0) {
+                            let closestDelivery = null;
+                            let closestDistance = Infinity;
+                            
+                            deliveryBuildings.forEach(building => {
+                                const distance = Math.sqrt(Math.pow(building.x - villager.x, 2) + Math.pow(building.y - villager.y, 2));
+                                if (distance < closestDistance) {
+                                    closestDistance = distance;
+                                    closestDelivery = building;
+                                }
+                            });
+                            
+                            if (closestDelivery) {
+                                villager.targetX = closestDelivery.x;
+                                villager.targetY = closestDelivery.y;
+                                villager.targetDelivery = closestDelivery;
+                                villager.state = 'delivering';
+                            }
+                        } else {
+                            villager.state = 'idle';
+                            villager.carrying = null;
+                            villager.carryAmount = 0;
+                        }
+                    }
+                    
+                } else if (villager.state === 'delivering') {
+                    if (villager.targetDelivery) {
+                        const distance = Math.sqrt(Math.pow(villager.targetDelivery.x - villager.x, 2) + Math.pow(villager.targetDelivery.y - villager.y, 2));
+                        
+                        if (distance < 30) {
+                            // 这里可以给敌方增加资源，但为了游戏平衡，暂时不增加
+                            villager.carrying = null;
+                            villager.carryAmount = 0;
+                            villager.targetX = null;
+                            villager.targetY = null;
+                            villager.targetDelivery = null;
+                            villager.state = 'idle';
+                        }
+                    } else {
+                        villager.state = 'idle';
+                        villager.carrying = null;
+                        villager.carryAmount = 0;
+                    }
+                }
+            });
+            
+            // 根据难度调整攻击单位数量
+            const MAX_ATTACKING_UNITS = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
+            let attackingUnits = 0;
+            
+            // 敌方军事单位攻击
+            enemyUnits.forEach(enemy => {
+                if (enemy.attackTarget) {
+                    attackingUnits++;
+                    let target;
+                    if (enemy.attackTarget.type === 'unit') {
+                        target = gameData.units.find(u => u.id === enemy.attackTarget.id);
+                    } else {
+                        target = gameData.buildings.find(b => b.id === enemy.attackTarget.id);
+                    }
+                    
+                    if (!target || target.health <= 0) {
+                        enemy.attackTarget = null;
+                        return;
+                    }
+                    
+                    const enemyInfo = ENTITY_TYPES[enemy.type];
+                    const attackRange = enemyInfo.range || AI_ATTACK_RANGE;
+                    const distance = Math.sqrt(Math.pow(target.x - enemy.x, 2) + Math.pow(target.y - enemy.y, 2));
+                    
+                    if (distance > attackRange) {
+                        const dx = target.x - enemy.x;
+                        const dy = target.y - enemy.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist > 2) {
+                            const speed = enemyInfo.speed * 60 * (difficulty === 'hard' ? 1.1 : 1.0); // 困难难度移动更快
+                            enemy.x += (dx / dist) * speed * dt;
+                            enemy.y += (dy / dist) * speed * dt;
+                        }
+                    } else {
+                        const attackCooldown = difficulty === 'easy' ? 2000 : difficulty === 'medium' ? 1500 : 1000; // 困难难度攻击更快
+                        if (now - enemy.lastAttackTime > attackCooldown) {
+                            enemy.lastAttackTime = now;
+                            const attackMultiplier = difficulty === 'easy' ? 0.6 : difficulty === 'medium' ? 0.8 : 1.0; // 困难难度攻击力更高
+                            target.health -= enemyInfo.attack * attackMultiplier;
+                            
+                            // 播放攻击音效
+                            playSound('attack');
+                            
+                            gameData.attackEffects.push({
+                                x: target.x,
+                                y: target.y,
+                                type: enemy.type === 'archer' ? 'arrow' : 'melee',
+                                time: now,
+                                duration: 300
+                            });
+                            
+                            if (target.health <= 0) {
+                                    if (enemy.attackTarget.type === 'unit') {
+                                        const index = gameData.units.findIndex(u => u.id === target.id);
+                                        if (index > -1) {
+                                            if (target.playerColor === 'blue') {
+                                                const unitPopulation = ENTITY_TYPES[target.type].population || 1;
+                                                gameData.population = Math.max(0, gameData.population - unitPopulation);
+                                                updateResourceDisplay();
+                                            }
+                                            // 播放死亡音效
+                                            playSound('die');
+                                            gameData.units.splice(index, 1);
+                                            showMessage('你的单位被消灭了！');
+                                        }
+                                    } else {
+                                        const index = gameData.buildings.findIndex(b => b.id === target.id);
+                                        if (index > -1) {
+                                            // 播放拆房音效
+                                            playSound('explosion');
+                                            gameData.buildings.splice(index, 1);
+                                            showMessage('你的建筑被摧毁了！');
+                                        }
+                                    }
+                                    enemy.attackTarget = null;
+                            }
+                        }
+                    }
+                } else {
+                    // 限制攻击单位数量
+                    if (attackingUnits >= MAX_ATTACKING_UNITS) return;
+                    
+                    // 优先寻找附近的玩家单位
+                    let closestTarget = null;
+                    let closestDistance = AI_DETECTION_RANGE;
+                    let targetType = 'unit';
+                    
+                    playerUnits.forEach(playerUnit => {
+                        const distance = Math.sqrt(Math.pow(playerUnit.x - enemy.x, 2) + Math.pow(playerUnit.y - enemy.y, 2));
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestTarget = playerUnit;
+                            targetType = 'unit';
+                        }
+                    });
+                    
+                    // 如果没有找到单位，寻找建筑
+                    if (!closestTarget) {
+                        playerBuildings.forEach(building => {
+                            const distance = Math.sqrt(Math.pow(building.x - enemy.x, 2) + Math.pow(building.y - enemy.y, 2));
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestTarget = building;
+                                targetType = 'building';
+                            }
+                        });
+                    }
+                    
+                    // 如果找到目标，开始攻击
+                    if (closestTarget) {
+                        // 根据难度调整攻击概率
+                        const attackProbability = difficulty === 'easy' ? 0.3 : difficulty === 'medium' ? 0.5 : 0.7;
+                        if (Math.random() > (1 - attackProbability)) {
+                            enemy.attackTarget = { id: closestTarget.id, type: targetType };
+                            attackingUnits++;
+                        }
+                    } else {
+                        // 没有找到目标，主动向玩家基地移动
+                        if (!enemy.lastMoveTime) {
+                            enemy.lastMoveTime = now;
+                        }
+                        
+                        // 根据难度调整移动频率
+                        const moveInterval = aiSettings.attackDelay;
+                        if (now - enemy.lastMoveTime > moveInterval) {
+                            enemy.lastMoveTime = now;
+                            
+                            // 寻找玩家的城镇中心或主要建筑
+                            const playerTownCenter = playerBuildings.find(b => b.type.includes('town_center'));
+                            if (playerTownCenter) {
+                                // 向玩家城镇中心移动
+                                enemy.targetX = playerTownCenter.x + Math.random() * 100 - 50;
+                                enemy.targetY = playerTownCenter.y + Math.random() * 100 - 50;
+                                enemy.state = 'moving_to_base';
+                            } else if (playerBuildings.length > 0) {
+                                // 向最近的玩家建筑移动
+                                const nearestBuilding = playerBuildings.reduce((nearest, building) => {
+                                    const distance = Math.sqrt(Math.pow(building.x - enemy.x, 2) + Math.pow(building.y - enemy.y, 2));
+                                    if (!nearest || distance < nearest.distance) {
+                                        return { building, distance };
+                                    }
+                                    return nearest;
+                                }, null);
+                                
+                                if (nearestBuilding) {
+                                    enemy.targetX = nearestBuilding.building.x + Math.random() * 80 - 40;
+                                    enemy.targetY = nearestBuilding.building.y + Math.random() * 80 - 40;
+                                    enemy.state = 'moving_to_base';
+                                }
+                            }
+                        }
+                        
+                        // 执行移动
+                        if (enemy.state === 'moving_to_base' && enemy.targetX !== null && enemy.targetY !== null) {
+                            const distance = Math.sqrt(Math.pow(enemy.targetX - enemy.x, 2) + Math.pow(enemy.targetY - enemy.y, 2));
+                            if (distance > 5) {
+                                const dx = enemy.targetX - enemy.x;
+                                const dy = enemy.targetY - enemy.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                const speed = ENTITY_TYPES[enemy.type].speed * 60 * (difficulty === 'hard' ? 1.1 : 0.9); // 困难难度移动更快
+                                enemy.x += (dx / dist) * speed * dt;
+                                enemy.y += (dy / dist) * speed * dt;
+                            } else {
+                                // 到达目标区域，重置状态
+                                enemy.targetX = null;
+                                enemy.targetY = null;
+                                enemy.state = 'idle';
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 敌方箭塔自动攻击
+            gameData.towers.forEach(tower => {
+                if (tower.playerColor !== 'red') return;
+                const towerInfo = ENTITY_TYPES[tower.type];
+                
+                playerUnits.forEach(playerUnit => {
+                    const distance = Math.sqrt(Math.pow(playerUnit.x - tower.x, 2) + Math.pow(playerUnit.y - tower.y, 2));
+                    if (distance <= towerInfo.range) {
+                        const attackMultiplier = difficulty === 'easy' ? 0.6 : difficulty === 'medium' ? 0.8 : 1.0;
+                        playerUnit.health -= towerInfo.attack * attackMultiplier * dt;
+                        
+                        if (playerUnit.health <= 0) {
+                            const index = gameData.units.findIndex(u => u.id === playerUnit.id);
+                            if (index > -1) {
+                                const unitPopulation = ENTITY_TYPES[playerUnit.type].population || 1;
+                                gameData.population = Math.max(0, gameData.population - unitPopulation);
+                                updateResourceDisplay();
+                                gameData.units.splice(index, 1);
+                                showMessage('敌方箭塔消灭了你的单位！');
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // 敌方AI生产单位
+            const enemyTC = enemyBuildings.find(b => b.type === 'town_center' || b.type === 'town_center_age2' || b.type === 'town_center_age3');
+            if (enemyTC) {
+                // 限制敌方单位数量
+                const maxEnemyUnits = aiSettings.maxUnits;
+                const currentEnemyUnits = gameData.units.filter(u => u.playerColor === 'red').length;
+                
+                if (currentEnemyUnits < maxEnemyUnits) {
+                    // 根据难度调整生产间隔
+                    if (!enemyTC.lastProductionTime) {
+                        enemyTC.lastProductionTime = now;
+                    }
+                    
+                    if (now - enemyTC.lastProductionTime > aiSettings.productionInterval) {
+                        const availableUnits = ENTITY_TYPES[enemyTC.type].produces || [];
+                        if (availableUnits.length > 0) {
+                            // 根据难度调整单位生产比例
+                            let unitType;
+                            const rand = Math.random();
+                            if (rand < aiSettings.unitProductionRatio.villager) {
+                                unitType = availableUnits.find(u => u === 'villager') || availableUnits[0];
+                            } else {
+                                unitType = availableUnits.find(u => u === 'soldier' || u === 'archer') || availableUnits[0];
+                            }
+                            
+                            // 生产单位
+                            const newUnit = {
+                                id: Date.now() + Math.random(),
+                                type: unitType,
+                                x: enemyTC.x + Math.random() * 40 - 20,
+                                y: enemyTC.y + Math.random() * 40 - 20,
+                                health: ENTITY_TYPES[unitType].health,
+                                maxHealth: ENTITY_TYPES[unitType].health,
+                                playerColor: 'red',
+                                targetX: null,
+                                targetY: null,
+                                carrying: null,
+                                carryAmount: 0,
+                                attackTarget: null,
+                                lastAttackTime: 0
+                            };
+                            
+                            gameData.units.push(newUnit);
+                            // 播放训练音效
+                            playSound('train');
+                            enemyTC.lastProductionTime = now;
+                        }
+                    }
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            ctx.save();
+            // 应用缩放
+            ctx.scale(camera.zoom, camera.zoom);
+            // 应用平移
+            ctx.translate(-camera.x, -camera.y);
+            
+            drawTerrain();
+            drawTerrainFeatures();
+            drawTradePosts();
+            drawResources();
+            drawAnimals();
+            drawBuildings();
+            drawUnits();
+            drawAttackEffects();
+            drawSmokeEffects();
+            drawSelection();
+            if (buildMode) drawBuildPreview();
+            
+            ctx.restore();
+        }
+
+        function drawAttackEffects() {
+            const now = Date.now();
+            gameData.attackEffects.forEach(effect => {
+                const progress = (now - effect.time) / effect.duration;
+                const alpha = 1 - progress;
+                
+                if (effect.type === 'melee') {
+                    ctx.strokeStyle = `rgba(255, 255, 0, ${alpha})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(effect.x, effect.y, 20 + progress * 20, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (effect.type === 'arrow') {
+                    ctx.fillStyle = `rgba(255, 100, 0, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(effect.x, effect.y, 10 * (1 - progress * 0.5), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function drawTerrain() {
+            ctx.fillStyle = '#4a8a5c';
+            ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+            
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < MAP_WIDTH; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, MAP_HEIGHT);
+                ctx.stroke();
+            }
+            for (let y = 0; y < MAP_HEIGHT; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(MAP_WIDTH, y);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = 'rgba(60, 120, 80, 0.3)';
+            for (let i = 0; i < 200; i++) {
+                const x = (i * 173) % MAP_WIDTH;
+                const y = (i * 211) % MAP_HEIGHT;
+                ctx.beginPath();
+                ctx.arc(x, y, 15 + (i % 10), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawResources() {
+            gameData.mapResources.forEach(resource => {
+                // 绘制阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(resource.x + 3, resource.y + 3, 18, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (resource.type === 'wood') {
+                    // 树干（更逼真的形状）
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.ellipse(resource.x, resource.y - 5, 8, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 树皮纹理
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 1;
+                    for (let i = -10; i <= 10; i += 3) {
+                        ctx.beginPath();
+                        const width = 12 - Math.abs(i) * 0.3;
+                        ctx.ellipse(resource.x, resource.y + i, width/2, 1, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    // 树冠 - 多层效果
+                    ctx.fillStyle = '#228B22';
+                    ctx.beginPath();
+                    ctx.arc(resource.x, resource.y - 35, 25, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#32CD32';
+                    ctx.beginPath();
+                    ctx.arc(resource.x - 10, resource.y - 30, 18, 0, Math.PI * 2);
+                    ctx.arc(resource.x + 10, resource.y - 32, 16, 0, Math.PI * 2);
+                    ctx.arc(resource.x, resource.y - 40, 14, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 树叶细节
+                    ctx.fillStyle = '#006400';
+                    ctx.beginPath();
+                    ctx.arc(resource.x - 5, resource.y - 45, 10, 0, Math.PI * 2);
+                    ctx.arc(resource.x + 5, resource.y - 43, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 高光和细节
+                    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    ctx.beginPath();
+                    ctx.arc(resource.x - 8, resource.y - 38, 6, 0, Math.PI * 2);
+                    ctx.arc(resource.x + 5, resource.y - 40, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 地面阴影
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    ctx.beginPath();
+                    ctx.ellipse(resource.x, resource.y + 8, 15, 5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                } else if (resource.type === 'gold') {
+                    // 金矿底座（更自然的形状）
+                    ctx.fillStyle = '#8B7355';
+                    ctx.beginPath();
+                    ctx.ellipse(resource.x, resource.y + 8, 22, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 底座纹理
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 1;
+                    for (let i = -10; i <= 10; i += 5) {
+                        ctx.beginPath();
+                        const width = 20 - Math.abs(i) * 0.4;
+                        ctx.ellipse(resource.x, resource.y + i, width/2, 2, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    // 金块（更逼真的形状）
+                    const goldPositions = [
+                        {x: 0, y: -18, s: 14, r: 0.5},
+                        {x: -14, y: -8, s: 12, r: -0.3},
+                        {x: 14, y: -10, s: 13, r: 0.2},
+                        {x: -8, y: 0, s: 10, r: -0.5},
+                        {x: 10, y: 3, s: 11, r: 0.3}
+                    ];
+                    goldPositions.forEach(g => {
+                        // 金块阴影
+                        ctx.save();
+                        ctx.translate(resource.x + g.x + 2, resource.y + g.y + 2);
+                        ctx.rotate(g.r);
+                        ctx.fillStyle = '#B8860B';
+                        ctx.beginPath();
+                        ctx.moveTo(0, g.s/2);
+                        ctx.lineTo(g.s/2, 0);
+                        ctx.lineTo(0, -g.s/2);
+                        ctx.lineTo(-g.s/2, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.restore();
+                        // 金块本体
+                        ctx.save();
+                        ctx.translate(resource.x + g.x, resource.y + g.y);
+                        ctx.rotate(g.r);
+                        ctx.fillStyle = '#FFD700';
+                        ctx.beginPath();
+                        ctx.moveTo(0, g.s/2);
+                        ctx.lineTo(g.s/2, 0);
+                        ctx.lineTo(0, -g.s/2);
+                        ctx.lineTo(-g.s/2, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                        // 金块高光
+                        ctx.fillStyle = '#FFFFE0';
+                        ctx.beginPath();
+                        ctx.moveTo(0, g.s/3);
+                        ctx.lineTo(g.s/3, 0);
+                        ctx.lineTo(0, -g.s/3);
+                        ctx.lineTo(-g.s/3, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.restore();
+                    });
+                    // 闪光效果（多个位置）
+                    const sparkles = [{x: -5, y: -15}, {x: 8, y: -12}, {x: -10, y: -5}];
+                    sparkles.forEach(sparkle => {
+                        ctx.fillStyle = 'rgba(255,255,200,0.7)';
+                        ctx.beginPath();
+                        ctx.arc(resource.x + sparkle.x, resource.y + sparkle.y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                        ctx.beginPath();
+                        ctx.arc(resource.x + sparkle.x - 1, resource.y + sparkle.y - 1, 1, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    
+                } else if (resource.type === 'stone') {
+                    // 石头堆（更自然的布局）
+                    const stones = [
+                        {x: 0, y: -8, r: 16, c: '#808080', angle: 0},
+                        {x: -14, y: 6, r: 12, c: '#696969', angle: -0.3},
+                        {x: 14, y: 4, r: 13, c: '#787878', angle: 0.2},
+                        {x: 0, y: 10, r: 11, c: '#606060', angle: 0.5},
+                        {x: -8, y: -14, r: 10, c: '#707070', angle: -0.4}
+                    ];
+                    stones.forEach(s => {
+                        // 石头阴影
+                        ctx.save();
+                        ctx.translate(resource.x + s.x + 3, resource.y + s.y + 3);
+                        ctx.rotate(s.angle);
+                        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, s.r, s.r * 0.8, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                        // 石头本体（不规则形状）
+                        ctx.save();
+                        ctx.translate(resource.x + s.x, resource.y + s.y);
+                        ctx.rotate(s.angle);
+                        ctx.fillStyle = s.c;
+                        ctx.beginPath();
+                        ctx.moveTo(0, -s.r);
+                        ctx.lineTo(s.r * 0.8, -s.r * 0.3);
+                        ctx.lineTo(s.r * 0.6, s.r * 0.7);
+                        ctx.lineTo(-s.r * 0.4, s.r * 0.9);
+                        ctx.lineTo(-s.r * 0.9, s.r * 0.2);
+                        ctx.lineTo(-s.r * 0.7, -s.r * 0.6);
+                        ctx.closePath();
+                        ctx.fill();
+                        // 石头纹理
+                        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(-s.r * 0.5, -s.r * 0.5);
+                        ctx.lineTo(s.r * 0.5, s.r * 0.5);
+                        ctx.moveTo(-s.r * 0.3, s.r * 0.3);
+                        ctx.lineTo(s.r * 0.3, -s.r * 0.3);
+                        ctx.stroke();
+                        // 高光
+                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.beginPath();
+                        ctx.ellipse(-s.r * 0.3, -s.r * 0.3, s.r * 0.3, s.r * 0.2, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    });
+                    // 地面阴影
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    ctx.beginPath();
+                    ctx.ellipse(resource.x, resource.y + 12, 20, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                } else if (resource.type === 'food') {
+                    // 浆果丛（更茂密的外观）
+                    ctx.fillStyle = '#228B22';
+                    ctx.beginPath();
+                    ctx.ellipse(resource.x, resource.y + 8, 20, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 叶子层
+                    ctx.fillStyle = '#32CD32';
+                    const leafPositions = [
+                        {x: 0, y: -5, r: 14},
+                        {x: -8, y: 0, r: 12},
+                        {x: 8, y: 2, r: 11},
+                        {x: 0, y: 6, r: 10}
+                    ];
+                    leafPositions.forEach(leaf => {
+                        ctx.beginPath();
+                        ctx.ellipse(resource.x + leaf.x, resource.y + leaf.y, leaf.r, leaf.r * 0.8, Math.random() * Math.PI, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    // 浆果（更多且更鲜艳）
+                    const berries = [
+                        {x: -10, y: -8, size: 5},
+                        {x: 6, y: -10, size: 4},
+                        {x: 12, y: -2, size: 5},
+                        {x: -6, y: 7, size: 4},
+                        {x: 10, y: 8, size: 4},
+                        {x: 0, y: -12, size: 5},
+                        {x: -12, y: 2, size: 4},
+                        {x: 8, y: -5, size: 4}
+                    ];
+                    berries.forEach(b => {
+                        // 浆果阴影
+                        ctx.fillStyle = '#8B0000';
+                        ctx.beginPath();
+                        ctx.arc(resource.x + b.x + 1, resource.y + b.y + 1, b.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        // 浆果本体
+                        ctx.fillStyle = '#DC143C';
+                        ctx.beginPath();
+                        ctx.arc(resource.x + b.x, resource.y + b.y, b.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        // 浆果高光
+                        ctx.fillStyle = '#FF6347';
+                        ctx.beginPath();
+                        ctx.arc(resource.x + b.x - 1, resource.y + b.y - 1, b.size * 0.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    // 地面阴影
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    ctx.beginPath();
+                    ctx.ellipse(resource.x, resource.y + 12, 18, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // 资源量指示
+                if (resource.amount > 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 2;
+                    ctx.strokeText(resource.amount, resource.x, resource.y - 45);
+                    ctx.fillText(resource.amount, resource.x, resource.y - 45);
+                }
+            });
+        }
+
+
+
+        function drawBuildings() {
+            gameData.buildings.forEach(building => {
+                const typeInfo = ENTITY_TYPES[building.type];
+                const size = typeInfo.size;
+                const x = building.x - size / 2;
+                const y = building.y - size / 2;
+                const isEnemy = building.playerColor === 'red';
+                
+                // 建筑阴影 - 更真实的阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.beginPath();
+                ctx.ellipse(building.x, building.y + size * 0.6, size * 0.8, size * 0.2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 建筑底色
+                const baseColor = isEnemy ? '#8B0000' : '#8B4513';
+                ctx.fillStyle = baseColor;
+                
+                // 根据建筑类型绘制不同的形状
+                if (building.type.includes('town_center')) {
+                    // 城镇中心 - 城堡形状
+                    ctx.beginPath();
+                    // 底部矩形
+                    ctx.fillRect(x, y + size * 0.3, size, size * 0.7);
+                    // 顶部塔楼
+                    ctx.fillRect(x + size * 0.3, y, size * 0.4, size * 0.5);
+                    // 塔顶
+                    ctx.beginPath();
+                    ctx.moveTo(x + size * 0.25, y + size * 0.5);
+                    ctx.lineTo(x + size * 0.5, y);
+                    ctx.lineTo(x + size * 0.75, y + size * 0.5);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (building.type === 'barracks') {
+                    // 兵营 - 矩形带屋顶
+                    ctx.fillRect(x, y + size * 0.2, size, size * 0.8);
+                    // 屋顶
+                    ctx.beginPath();
+                    ctx.moveTo(x - size * 0.1, y + size * 0.2);
+                    ctx.lineTo(x + size * 0.5, y - size * 0.1);
+                    ctx.lineTo(x + size * 1.1, y + size * 0.2);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (building.type === 'farm') {
+                    // 农场 - 田地形状
+                    ctx.fillStyle = '#7a9a5a';
+                    ctx.fillRect(x, y, size, size);
+                    // 田埂
+                    ctx.strokeStyle = '#5a7a3a';
+                    ctx.lineWidth = 2;
+                    for (let i = 1; i < 4; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, y + size * i / 4);
+                        ctx.lineTo(x + size, y + size * i / 4);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(x + size * i / 4, y);
+                        ctx.lineTo(x + size * i / 4, y + size);
+                        ctx.stroke();
+                    }
+                } else if (building.type === 'market') {
+                    // 市场 - 圆形建筑
+                    ctx.beginPath();
+                    ctx.arc(building.x, building.y, size * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 屋顶
+                    ctx.fillStyle = '#654321';
+                    ctx.beginPath();
+                    ctx.arc(building.x, building.y, size * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (building.type === 'watch_tower' || building.type === 'castle_tower') {
+                    // 箭塔/城堡 - 高塔
+                    ctx.fillRect(x + size * 0.3, y, size * 0.4, size);
+                    // 塔顶
+                    ctx.fillStyle = '#654321';
+                    ctx.beginPath();
+                    ctx.moveTo(x + size * 0.2, y);
+                    ctx.lineTo(x + size * 0.5, y - size * 0.2);
+                    ctx.lineTo(x + size * 0.8, y);
+                    ctx.closePath();
+                    ctx.fill();
+                    // 箭窗
+                    ctx.fillStyle = '#000';
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillRect(x + size * 0.35, y + size * 0.3 + i * size * 0.2, size * 0.3, size * 0.1);
+                    }
+                } else if (building.type === 'wall') {
+                    // 围墙 - 城墙形状
+                    ctx.fillRect(x, y + size * 0.3, size, size * 0.7);
+                    // 城垛
+                    for (let i = 0; i < 5; i++) {
+                        ctx.fillRect(x + i * size / 5, y, size / 6, size * 0.3);
+                    }
+                } else {
+                    // 其他建筑 - 基础矩形
+                    ctx.fillRect(x, y, size, size);
+                }
+                
+                // 建筑纹理 - 更细致的砖块效果
+                ctx.strokeStyle = isEnemy ? '#5a0000' : '#654321';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < size; i += 12) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + i, y);
+                    ctx.lineTo(x + i, y + size);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < size; i += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + i);
+                    ctx.lineTo(x + size, y + i);
+                    ctx.stroke();
+                }
+                
+                // 建筑边框
+                ctx.strokeStyle = isEnemy ? '#DC143C' : '#D2691E';
+                ctx.lineWidth = 3;
+                if (building.type.includes('town_center')) {
+                    // 城镇中心边框
+                    ctx.strokeRect(x, y + size * 0.3, size, size * 0.7);
+                    ctx.strokeRect(x + size * 0.3, y, size * 0.4, size * 0.5);
+                } else if (building.type === 'barracks') {
+                    // 兵营边框
+                    ctx.strokeRect(x, y + size * 0.2, size, size * 0.8);
+                } else if (building.type === 'farm') {
+                    // 农场边框
+                    ctx.strokeRect(x, y, size, size);
+                } else if (building.type === 'market') {
+                    // 市场边框
+                    ctx.beginPath();
+                    ctx.arc(building.x, building.y, size * 0.4, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else {
+                    // 其他建筑边框
+                    ctx.strokeRect(x, y, size, size);
+                }
+                
+                // 建筑图标
+                ctx.font = `bold ${size * 0.4}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = isEnemy ? '#FF6B6B' : '#FFD700';
+                ctx.fillText(BUILDING_ICONS[building.type] || '🏠', building.x, building.y);
+                
+                // 建筑类型标签
+                const buildingLabels = {
+                    town_center: '城镇中心',
+                    town_center_age2: '城堡',
+                    town_center_age3: '皇宫',
+                    barracks: '兵营',
+                    siege_workshop: '攻城厂',
+                    farm: '农场',
+                    market: '市场',
+                    lumber_camp: '木材厂',
+                    mill: '磨坊',
+                    mining_camp: '矿厂',
+                    wall: '围墙',
+                    watch_tower: '箭塔',
+                    castle_tower: '炮楼'
+                };
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Arial';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                const label = buildingLabels[building.type] || '建筑';
+                ctx.strokeText(label, building.x, y - 15);
+                ctx.fillText(label, building.x, y - 15);
+                
+                // 血条 - 更美观
+                const healthPercent = building.health / building.maxHealth;
+                const barHeight = 8;
+                const barWidth = size * 0.8;
+                
+                // 血条背景
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(building.x - barWidth/2 - 1, y - barHeight - 8, barWidth + 2, barHeight + 2);
+                
+                // 血条底色
+                ctx.fillStyle = 'rgba(51,51,51,0.8)';
+                ctx.fillRect(building.x - barWidth/2, y - barHeight - 7, barWidth, barHeight);
+                
+                // 血条
+                const healthColor = healthPercent > 0.6 ? '#00ff00' : healthPercent > 0.3 ? '#ffff00' : '#ff0000';
+                ctx.fillStyle = healthColor;
+                ctx.fillRect(building.x - barWidth/2, y - barHeight - 7, barWidth * healthPercent, barHeight);
+                
+                // 血条高光
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fillRect(building.x - barWidth/2, y - barHeight - 7, barWidth * healthPercent, barHeight/2);
+                
+                // 健康百分比
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 8px Arial';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeText(`${Math.round(healthPercent * 100)}%`, building.x, y - barHeight - 4);
+                ctx.fillText(`${Math.round(healthPercent * 100)}%`, building.x, y - barHeight - 4);
+            });
+        }
+
+        function drawUnits() {
+            gameData.units.forEach(unit => {
+                const typeInfo = ENTITY_TYPES[unit.type];
+                const size = typeInfo.size;
+                const isSelected = selectedUnits.includes(unit.id);
+                const isEnemy = unit.playerColor === 'red';
+                const baseColor = isEnemy ? '#DC143C' : '#4169E1';
+                const darkColor = isEnemy ? '#8B0000' : '#1E3A8A';
+                const lightColor = isEnemy ? '#FF6B6B' : '#6495ED';
+                
+                // 绘制阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.beginPath();
+                ctx.ellipse(unit.x + 2, unit.y + size - 2, size * 0.8, size * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (isSelected) {
+                    // 选中光环
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, size + 8, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fillStyle = 'rgba(0,255,0,0.2)';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, size + 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // 只对非农民单位绘制背景和描边
+                if (unit.type !== 'villager') {
+                    ctx.fillStyle = isEnemy ? 'rgba(220,20,60,0.3)' : 'rgba(65,105,225,0.3)';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, size + 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = isEnemy ? '#DC143C' : '#4169E1';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                if (unit.type === 'villager') {
+                    // 村民 - 简化但清晰的风格
+                    // 身体
+                    ctx.fillStyle = '#DEB887';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#8B7355';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 衣服
+                    ctx.fillStyle = darkColor;
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, 10, Math.PI * 0.8, Math.PI * 2.2);
+                    ctx.fill();
+                    
+                    // 头部
+                    ctx.fillStyle = '#F4A460';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y - 8, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#8B7355';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // 工具图标
+                    ctx.fillStyle = '#8B4513';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⚒', unit.x, unit.y + 4);
+                    
+                } else if (unit.type === 'soldier') {
+                    // 士兵 - 盾牌和剑
+                    // 身体
+                    ctx.fillStyle = baseColor;
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = darkColor;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 头盔
+                    ctx.fillStyle = '#C0C0C0';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y - 6, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#808080';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // 盾牌
+                    ctx.fillStyle = darkColor;
+                    ctx.beginPath();
+                    ctx.arc(unit.x - 8, unit.y + 2, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 剑
+                    ctx.strokeStyle = '#C0C0C0';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(unit.x + 8, unit.y - 5);
+                    ctx.lineTo(unit.x + 15, unit.y + 10);
+                    ctx.stroke();
+                    
+                } else if (unit.type === 'knight') {
+                    // 骑士 - 马和骑手
+                    // 马身
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.ellipse(unit.x, unit.y + 3, 14, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 马头
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.ellipse(unit.x - 10, unit.y - 3, 7, 5, -0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 骑手身体
+                    ctx.fillStyle = baseColor;
+                    ctx.beginPath();
+                    ctx.arc(unit.x + 3, unit.y - 5, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 骑手头盔
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(unit.x + 3, unit.y - 12, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#B8860B';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // 长矛
+                    ctx.strokeStyle = '#8B4513';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(unit.x + 12, unit.y - 5);
+                    ctx.lineTo(unit.x + 22, unit.y - 20);
+                    ctx.stroke();
+                    
+                } else if (unit.type === 'archer') {
+                    // 弓箭手
+                    // 身体
+                    ctx.fillStyle = '#228B22';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y, 11, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#006400';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 头
+                    ctx.fillStyle = '#DEB887';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y - 8, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 弓
+                    ctx.strokeStyle = '#8B4513';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(unit.x + 10, unit.y, 10, -Math.PI/2, Math.PI/2);
+                    ctx.stroke();
+                    
+                    // 弓弦
+                    ctx.strokeStyle = '#F5F5DC';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(unit.x + 10, unit.y - 10);
+                    ctx.lineTo(unit.x + 10, unit.y + 10);
+                    ctx.stroke();
+                    
+                    // 箭
+                    ctx.strokeStyle = '#8B4513';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(unit.x + 5, unit.y - 8);
+                    ctx.lineTo(unit.x + 18, unit.y - 15);
+                    ctx.stroke();
+                    
+                } else if (unit.type === 'trader') {
+                    // 商人
+                    // 骆驼/驴
+                    ctx.fillStyle = '#CD853F';
+                    ctx.beginPath();
+                    ctx.ellipse(unit.x - 5, unit.y + 2, 12, 8, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 货物
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(unit.x - 5, unit.y - 8, 14, 10);
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(unit.x - 5, unit.y - 8, 14, 10);
+                    
+                    // 商人
+                    ctx.fillStyle = '#DEB887';
+                    ctx.beginPath();
+                    ctx.arc(unit.x + 8, unit.y - 5, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 金币标记
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = 'bold 10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('$', unit.x + 2, unit.y + 2);
+                    
+                } else if (unit.type === 'catapult') {
+                    // 投石车
+                    // 底座
+                    ctx.fillStyle = '#654321';
+                    ctx.fillRect(unit.x - 15, unit.y + 5, 30, 10);
+                    
+                    // 轮子
+                    ctx.fillStyle = '#333';
+                    ctx.beginPath();
+                    ctx.arc(unit.x - 12, unit.y + 15, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(unit.x + 12, unit.y + 15, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 支架
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.moveTo(unit.x - 5, unit.y + 5);
+                    ctx.lineTo(unit.x, unit.y - 15);
+                    ctx.lineTo(unit.x + 5, unit.y + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // 弹弓
+                    ctx.fillStyle = '#654321';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y - 15, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 石头
+                    ctx.fillStyle = '#808080';
+                    ctx.beginPath();
+                    ctx.arc(unit.x, unit.y - 18, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // 血条 - 更清晰
+                const healthPercent = unit.health / unit.maxHealth;
+                const barWidth = size * 1.5;
+                const barHeight = 6;
+                const barY = unit.y - size - 15;
+                
+                // 血条背景
+                ctx.fillStyle = '#000';
+                ctx.fillRect(unit.x - barWidth/2 - 1, barY - 1, barWidth + 2, barHeight + 2);
+                
+                // 血条
+                ctx.fillStyle = '#333';
+                ctx.fillRect(unit.x - barWidth/2, barY, barWidth, barHeight);
+                
+                const healthColor = healthPercent > 0.6 ? '#00ff00' : healthPercent > 0.3 ? '#ffff00' : '#ff0000';
+                ctx.fillStyle = healthColor;
+                ctx.fillRect(unit.x - barWidth/2, barY, barWidth * healthPercent, barHeight);
+                
+                // 血条高光
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.fillRect(unit.x - barWidth/2, barY, barWidth * healthPercent, barHeight/2);
+                
+                // 单位类型标签（小）
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 9px Arial';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                const typeLabels = {
+                    villager: '村',
+                    soldier: '兵',
+                    knight: '骑',
+                    archer: '弓',
+                    trader: '商',
+                    catapult: '车'
+                };
+                const label = typeLabels[unit.type] || '?';
+                ctx.strokeText(label, unit.x, unit.y + size + 12);
+                ctx.fillText(label, unit.x, unit.y + size + 12);
+                
+                // 农民携带资源显示
+                if (unit.type === 'villager' && unit.carrying) {
+                    const resourceIcons = {
+                        wood: '🪵',
+                        food: '🌾',
+                        gold: '💰',
+                        stone: '🪨'
+                    };
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillText(resourceIcons[unit.carrying] || '📦', unit.x, unit.y - size - 20);
+                    ctx.font = 'bold 8px Arial';
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillText(unit.carryAmount, unit.x + 10, unit.y - size - 20);
+                }
+                
+                if (unit.targetX !== null && unit.targetY !== null) {
+                    // 移动目标线
+                    ctx.strokeStyle = isEnemy ? 'rgba(255,0,0,0.4)' : 'rgba(0,255,0,0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(unit.x, unit.y);
+                    ctx.lineTo(unit.targetX, unit.targetY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // 目标点标记
+                    ctx.fillStyle = isEnemy ? 'rgba(255,0,0,0.3)' : 'rgba(0,255,0,0.3)';
+                    ctx.beginPath();
+                    ctx.arc(unit.targetX, unit.targetY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function drawSelection() {
+            if (isSelecting) {
+                const worldStart = getWorldPos(selectionStart.x, selectionStart.y);
+                const worldEnd = getWorldPos(mousePos.x, mousePos.y);
+                
+                const minX = Math.min(worldStart.x, worldEnd.x);
+                const maxX = Math.max(worldStart.x, worldEnd.x);
+                const minY = Math.min(worldStart.y, worldEnd.y);
+                const maxY = Math.max(worldStart.y, worldEnd.y);
+                
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+                ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+            }
+        }
+
+        function drawBuildPreview() {
+            const worldPos = getWorldPos(mousePos.x, mousePos.y);
+            const buildingSize = ENTITY_TYPES[buildMode].size;
+            const x = worldPos.x - buildingSize / 2;
+            const y = worldPos.y - buildingSize / 2;
+            const isValid = !checkBuildingCollision(worldPos.x, worldPos.y, buildingSize);
+            
+            ctx.fillStyle = isValid ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+            ctx.fillRect(x, y, buildingSize, buildingSize);
+            ctx.strokeStyle = isValid ? '#00ff00' : '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, buildingSize, buildingSize);
+        }
+        
+        function drawTerrainFeatures() {
+            gameData.terrainFeatures.forEach(feature => {
+                if (feature.type === 'lake') {
+                    // 湖泊
+                    ctx.fillStyle = '#4682B4';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 湖泊边缘
+                    ctx.fillStyle = '#5F9EA0';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2 + 10, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (feature.type === 'mountain') {
+                    // 山脉
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 山顶
+                    ctx.fillStyle = '#A0522D';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (feature.type === 'grass') {
+                    // 草地
+                    ctx.fillStyle = '#32CD32';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (feature.type === 'forest') {
+                    // 森林
+                    ctx.fillStyle = '#228B22';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 森林边缘
+                    ctx.fillStyle = '#2E8B57';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2 + 15, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (feature.type === 'desert') {
+                    // 沙漠
+                    ctx.fillStyle = '#F0DC82';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 沙漠边缘
+                    ctx.fillStyle = '#DEB887';
+                    ctx.beginPath();
+                    ctx.arc(feature.x, feature.y, feature.size / 2 + 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+        
+        function drawTradePosts() {
+            gameData.tradePosts.forEach(post => {
+                // 贸易站底座
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(post.x - post.size / 2, post.y - post.size / 2, post.size, post.size);
+                // 贸易站纹理
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(post.x - post.size / 2, post.y - post.size / 2, post.size, post.size);
+                // 贸易站图标
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🏪', post.x, post.y + 5);
+                // 贸易站标签
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px Arial';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeText('贸易站', post.x, post.y - post.size / 2 - 10);
+                ctx.fillText('贸易站', post.x, post.y - post.size / 2 - 10);
+            });
+        }
+        
+        function drawAnimals() {
+            gameData.animals.forEach(animal => {
+                if (animal.type === 'sheep') {
+                    // 羊身体
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.ellipse(animal.x, animal.y, 12, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 羊头
+                    ctx.beginPath();
+                    ctx.ellipse(animal.x - 10, animal.y - 3, 6, 5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 羊腿
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(animal.x - 8, animal.y + 8, 3, 6);
+                    ctx.fillRect(animal.x - 3, animal.y + 8, 3, 6);
+                    ctx.fillRect(animal.x + 2, animal.y + 8, 3, 6);
+                    ctx.fillRect(animal.x + 7, animal.y + 8, 3, 6);
+                    // 羊角
+                    ctx.strokeStyle = '#A0522D';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(animal.x - 10, animal.y - 7);
+                    ctx.lineTo(animal.x - 15, animal.y - 12);
+                    ctx.moveTo(animal.x - 10, animal.y - 7);
+                    ctx.lineTo(animal.x - 15, animal.y - 2);
+                    ctx.stroke();
+                    // 羊眼睛
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(animal.x - 8, animal.y - 4, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (animal.type === 'deer') {
+                    // 鹿身体
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.ellipse(animal.x, animal.y, 15, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 鹿头
+                    ctx.beginPath();
+                    ctx.ellipse(animal.x - 12, animal.y - 5, 8, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 鹿腿
+                    ctx.fillStyle = '#654321';
+                    ctx.fillRect(animal.x - 10, animal.y + 10, 4, 8);
+                    ctx.fillRect(animal.x - 4, animal.y + 10, 4, 8);
+                    ctx.fillRect(animal.x + 2, animal.y + 10, 4, 8);
+                    ctx.fillRect(animal.x + 8, animal.y + 10, 4, 8);
+                    // 鹿角
+                    ctx.strokeStyle = '#A0522D';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(animal.x - 12, animal.y - 10);
+                    ctx.lineTo(animal.x - 18, animal.y - 18);
+                    ctx.lineTo(animal.x - 20, animal.y - 14);
+                    ctx.moveTo(animal.x - 12, animal.y - 10);
+                    ctx.lineTo(animal.x - 18, animal.y - 5);
+                    ctx.lineTo(animal.x - 20, animal.y - 9);
+                    ctx.stroke();
+                    // 鹿眼睛
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(animal.x - 10, animal.y - 6, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (animal.type === 'boar') {
+                    // 野猪身体
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.ellipse(animal.x, animal.y, 18, 14, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 野猪头
+                    ctx.beginPath();
+                    ctx.ellipse(animal.x - 14, animal.y - 3, 10, 8, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 野猪腿
+                    ctx.fillStyle = '#654321';
+                    ctx.fillRect(animal.x - 12, animal.y + 12, 5, 10);
+                    ctx.fillRect(animal.x - 5, animal.y + 12, 5, 10);
+                    ctx.fillRect(animal.x + 1, animal.y + 12, 5, 10);
+                    ctx.fillRect(animal.x + 8, animal.y + 12, 5, 10);
+                    // 野猪獠牙
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.moveTo(animal.x - 24, animal.y);
+                    ctx.lineTo(animal.x - 28, animal.y + 4);
+                    ctx.lineTo(animal.x - 22, animal.y + 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(animal.x - 24, animal.y - 2);
+                    ctx.lineTo(animal.x - 28, animal.y - 6);
+                    ctx.lineTo(animal.x - 22, animal.y - 4);
+                    ctx.fill();
+                    // 野猪眼睛
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(animal.x - 12, animal.y - 4, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+        
+        function drawSmokeEffects() {
+            const now = Date.now();
+            gameData.smokeEffects.forEach(effect => {
+                const progress = (now - effect.time) / effect.duration;
+                const alpha = 1 - progress;
+                const size = effect.size + progress * 20;
+                
+                ctx.fillStyle = `rgba(128, 128, 128, ${alpha * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(effect.x, effect.y - progress * 50, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = `rgba(160, 160, 160, ${alpha * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(effect.x + 5, effect.y - progress * 55, size * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        // 商队贸易更新
+        function updateTraders(now, dt) {
+            const traders = gameData.units.filter(u => u.type === 'trader');
+            
+            traders.forEach(trader => {
+                // 如果正在攻击，不贸易
+                if (trader.attackTarget) return;
+                
+                // 商队状态：idle, traveling, trading
+                if (!trader.state) {
+                    trader.state = 'idle';
+                }
+                
+                if (trader.state === 'idle') {
+                    // 寻找最近的贸易站
+                    let closestTradePost = null;
+                    let closestDistance = Infinity;
+                    
+                    gameData.tradePosts.forEach(post => {
+                        const distance = Math.sqrt(Math.pow(post.x - trader.x, 2) + Math.pow(post.y - trader.y, 2));
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestTradePost = post;
+                        }
+                    });
+                    
+                    if (closestTradePost) {
+                        trader.targetX = closestTradePost.x;
+                        trader.targetY = closestTradePost.y;
+                        trader.targetTradePost = closestTradePost;
+                        trader.state = 'traveling';
+                    }
+                    
+                } else if (trader.state === 'traveling') {
+                    if (trader.targetTradePost) {
+                        const distance = Math.sqrt(Math.pow(trader.targetTradePost.x - trader.x, 2) + Math.pow(trader.targetTradePost.y - trader.y, 2));
+                        
+                        if (distance > 30) {
+                            // 向贸易站移动
+                            const dx = trader.targetTradePost.x - trader.x;
+                            const dy = trader.targetTradePost.y - trader.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const speed = ENTITY_TYPES[trader.type].speed * 60;
+                            trader.x += (dx / dist) * speed * dt;
+                            trader.y += (dy / dist) * speed * dt;
+                        } else {
+                            // 到达贸易站，开始贸易
+                            trader.targetX = null;
+                            trader.targetY = null;
+                            trader.state = 'trading';
+                            trader.tradeStartTime = now;
+                        }
+                    } else {
+                        // 贸易站不存在，回到 idle 状态
+                        trader.state = 'idle';
+                        trader.targetTradePost = null;
+                    }
+                    
+                } else if (trader.state === 'trading') {
+                    // 贸易时间：3秒
+                    if (now - trader.tradeStartTime > 3000) {
+                        // 贸易完成，获得金币
+                        const tradeAmount = 20 + Math.random() * 10; // 每次贸易获得20-30单位金币
+                        gameData.resources.gold += tradeAmount;
+                        
+                        // 更新资源显示
+                        updateResourceDisplay();
+                        
+                        // 寻找下一个贸易站
+                        let nextTradePost = null;
+                        let minDistance = Infinity;
+                        
+                        gameData.tradePosts.forEach(post => {
+                            if (post.id === trader.targetTradePost.id) return;
+                            const distance = Math.sqrt(Math.pow(post.x - trader.x, 2) + Math.pow(post.y - trader.y, 2));
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                nextTradePost = post;
+                            }
+                        });
+                        
+                        if (nextTradePost) {
+                            trader.targetX = nextTradePost.x;
+                            trader.targetY = nextTradePost.y;
+                            trader.targetTradePost = nextTradePost;
+                            trader.state = 'traveling';
+                        } else {
+                            // 没有其他贸易站，回到 idle 状态
+                            trader.state = 'idle';
+                            trader.targetTradePost = null;
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMinimap() {
+            minimapCtx.fillStyle = '#3d6b4a';
+            minimapCtx.fillRect(0, 0, 200, 150);
+            
+            const scaleX = 200 / MAP_WIDTH;
+            const scaleY = 150 / MAP_HEIGHT;
+            
+            // 绘制地形特征
+            gameData.terrainFeatures.forEach(feature => {
+                if (feature.type === 'lake') {
+                    minimapCtx.fillStyle = '#4682B4';
+                } else if (feature.type === 'mountain') {
+                    minimapCtx.fillStyle = '#8B4513';
+                } else if (feature.type === 'grass') {
+                    minimapCtx.fillStyle = '#32CD32';
+                }
+                minimapCtx.beginPath();
+                minimapCtx.arc(feature.x * scaleX, feature.y * scaleY, feature.size * scaleX / 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // 绘制贸易站
+            gameData.tradePosts.forEach(post => {
+                minimapCtx.fillStyle = '#FFD700';
+                minimapCtx.fillRect(post.x * scaleX - 4, post.y * scaleY - 4, 8, 8);
+            });
+            
+            // 绘制动物
+            gameData.animals.forEach(animal => {
+                minimapCtx.fillStyle = '#FFFFFF';
+                minimapCtx.beginPath();
+                minimapCtx.arc(animal.x * scaleX, animal.y * scaleY, 1.5, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // 绘制建筑
+            gameData.buildings.forEach(building => {
+                minimapCtx.fillStyle = building.playerColor === 'blue' ? '#4169E1' : '#DC143C';
+                minimapCtx.fillRect(building.x * scaleX - 3, building.y * scaleY - 3, 6, 6);
+            });
+            
+            // 绘制单位
+            gameData.units.forEach(unit => {
+                minimapCtx.fillStyle = unit.playerColor === 'blue' ? '#00FF00' : '#FF0000';
+                minimapCtx.beginPath();
+                minimapCtx.arc(unit.x * scaleX, unit.y * scaleY, 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // 绘制视口
+            const viewX = camera.x * scaleX;
+            const viewY = camera.y * scaleY;
+            const viewW = gameCanvas.width * scaleX;
+            const viewH = gameCanvas.height * scaleY;
+            minimapCtx.strokeStyle = '#FFD700';
+            minimapCtx.lineWidth = 1;
+            minimapCtx.strokeRect(viewX, viewY, viewW, viewH);
+        }
+    </script>
+</body>
+</html>
